@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Soạn Giáo Án</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;background:#f4f6f8;color:#1f2937}
+header{background:#0f766e;color:#fff;padding:18px 22px}
+header h1{margin:0;font-size:24px} header p{margin:6px 0 0;opacity:.9}
+nav{display:flex;gap:6px;flex-wrap:wrap;background:#fff;padding:10px 16px;border-bottom:1px solid #e5e7eb;position:sticky;top:0}
+nav button{border:1px solid #d1d5db;background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer}
+nav button.active{background:#0f766e;color:#fff;border-color:#0f766e}
+main{max-width:980px;margin:0 auto;padding:18px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:14px}
+label{display:block;font-weight:600;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:9px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box}
+textarea{min-height:90px}
+button.primary{background:#0f766e;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer}
+button.secondary{background:#fff;border:1px solid #d1d5db;padding:8px 12px;border-radius:8px;cursor:pointer;margin:2px}
+.banner{background:#fef3c7;border:1px solid #f59e0b;padding:12px;border-radius:10px;margin-bottom:14px}
+.badge{background:#dcfce7;color:#166534;padding:2px 8px;border-radius:999px;font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse} td,th{border:1px solid #e5e7eb;padding:6px;text-align:left;vertical-align:top}
+.muted{color:#6b7280;font-size:14px}
+.hidden{display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal .card{max-width:520px;width:100%;max-height:90vh;overflow:auto}
+@media print{nav,header,button.no-print{display:none!important} main{max-width:none}}
+</style>
+</head>
+<body>
+<header>
+<h1>📚 App Soạn Giáo Án</h1>
+<p>Soạn giáo án theo khung CV 5512 / GDPT 2018 — Mầm non theo Chương trình Giáo dục mầm non. Dễ dùng, lưu 1 lần, dùng cả năm.</p>
+</header>
+<nav id="tabs"></nav>
+<main>
+<div id="banner" class="banner"></div>
+
+<section id="tab-soan" class="card">
+<h2>Soạn giáo án</h2>
+<div class="grid">
+<div><label>Cấp học</label><select id="f-level"><option>Mầm non</option><option selected>Tiểu học</option><option>THCS</option><option>THPT</option><option>Khác</option></select></div>
+<div><label>Môn học (chọn hoặc tự nhập)</label><input id="f-subject" list="subjects" placeholder="VD: Toán"><datalist id="subjects"><option>Toán</option><option>Tiếng Việt</option><option>Tiếng Anh</option><option>Khoa học</option><option>Lịch sử</option><option>Địa lí</option><option>Ngữ văn</option></datalist></div>
+<div><label>Lớp</label><input id="f-grade" placeholder="VD: Lớp 1"></div>
+<div><label>Bộ sách</label><select id="f-textbook"><option>Kết nối tri thức</option><option>Cánh diều</option><option>Chân trời sáng tạo</option></select></div>
+<div><label>Tên bài</label><input id="f-title" placeholder="VD: Phép cộng trong phạm vi 10"></div>
+<div><label>Thời lượng tiết (phút)</label><input id="f-minutes" type="number" value="35"></div>
+<div><label>Tuần (tùy chọn)</label><input id="f-week" placeholder="VD: Tuần 5"></div>
+<div><label>Số tiết</label><input id="f-periods" type="number" value="1"></div>
+</div>
+<p style="margin-top:12px"><button class="primary" onclick="createPlan()">Soạn giáo án</button>
+<button class="secondary" onclick="showBatch()">Soạn hàng loạt</button></p>
+<div id="batchBox" class="hidden card">
+<h3>Soạn hàng loạt (tối đa 15 giáo án/lần)</h3>
+<p class="muted">Mỗi dòng đúng định dạng: <b>Tuần | Tên bài | Số tiết</b></p>
+<textarea id="batchLines" placeholder="Tuần 5 | Phép cộng trong phạm vi 10 | 1&#10;Tuần 6 | Phép trừ trong phạm vi 10 | 1"></textarea>
+<p><button class="primary" onclick="createBatch()">Soạn hàng loạt</button></p>
+<div id="batchResult"></div>
+</div>
+<div id="planResult"></div>
+</section>
+
+<section id="tab-thuvien" class="card hidden">
+<h2>Thư viện của tôi</h2>
+<input id="lib-q" placeholder="Tìm theo tên bài, môn…" oninput="loadLibrary()">
+<select id="lib-level" onchange="loadLibrary()"><option value="">Tất cả cấp</option><option>Mầm non</option><option>Tiểu học</option><option>THCS</option><option>THPT</option><option>Khác</option></select>
+<div id="libList"></div>
+</section>
+
+<section id="tab-congdong" class="card hidden">
+<h2>Cộng đồng giáo viên</h2>
+<p class="muted">Giáo án do giáo viên chia sẻ. Thư viện cộng đồng ban đầu để trống — chỉ hiện những bài giáo viên thật sự chia sẻ.</p>
+<input id="com-q" placeholder="Tìm theo tên bài, môn…" oninput="loadCommunity()">
+<div id="comList"></div>
+</section>
+
+<section id="tab-to" class="card hidden">
+<h2>Tổ chuyên môn / Trường học</h2>
+<div class="grid">
+<div><label>Tạo tổ mới</label><input id="org-name" placeholder="VD: Tổ Toán — Tiểu học"><button class="primary" onclick="createOrg()" style="margin-top:8px">Tạo tổ (nhận mã mời)</button></div>
+<div><label>Tham gia bằng mã mời</label><input id="org-code" placeholder="Nhập mã, không phân biệt hoa/thường"><button class="primary" onclick="joinOrg()" style="margin-top:8px">Tham gia</button></div>
+</div>
+<div id="orgList"></div>
+</section>
+
+<section id="tab-thongke" class="card hidden">
+<h2>Thống kê &amp; Gói</h2>
+<label>Xem theo tổ</label><select id="stat-org" onchange="loadStats()"><option value="">Toàn app</option></select>
+<div id="statBox"></div>
+<h3>Các gói</h3>
+<div class="grid">
+<div class="card"><b>Miễn phí</b><p>Soạn 3 giáo án đầu, dùng thư viện cá nhân.</p></div>
+<div class="card"><b>Tổ chuyên môn — Liên hệ</b><p>Duyệt tổ, thống kê tổ, chia sẻ trong tổ.</p></div>
+<div class="card"><b>Trường học — Liên hệ</b><p>Toàn trường, nhiều tổ, thống kê toàn trường.</p></div>
+</div>
+<p class="muted">App không thu tiền trong app. Gói trả phí ghi giá “Liên hệ” — quản trị sẽ liên hệ trực tiếp khi giáo viên đăng ký.</p>
+</section>
+
+<section id="tab-hoso" class="card hidden">
+<h2>Hồ sơ giáo viên (lưu 1 lần)</h2>
+<div class="grid">
+<div><label>Họ tên</label><input id="p-name"></div>
+<div><label>Trường</label><input id="p-school"></div>
+<div><label>Tổ</label><input id="p-department"></div>
+<div><label>Năm học</label><input id="p-year"></div>
+<div><label>Bộ sách mặc định</label><select id="p-textbook"><option>Kết nối tri thức</option><option>Cánh diều</option><option>Chân trời sáng tạo</option></select></div>
+<div><label>Môn / Lớp mặc định</label><input id="p-subject" placeholder="VD: Toán — Lớp 1"></div>
+<div><label>Sĩ số</label><input id="p-size" type="number"></div>
+<div><label>Số học sinh cần hỗ trợ</label><input id="p-support" type="number"></div>
+</div>
+<label>Thông tin lớp khác</label><input id="p-class">
+<h3>Mẫu giáo án của trường đã duyệt</h3>
+<p class="muted">Dán mẫu vào đây, bấm “Trích quy ước” để hệ thống nhận diện thứ tự mục, thuật ngữ cố định và khối ký tên. Giáo viên sửa lại quy ước trước khi áp dụng.</p>
+<textarea id="p-sample"></textarea>
+<p><button class="primary" onclick="saveProfile()">Lưu hồ sơ</button> <button class="secondary" onclick="extractSample()">Trích quy ước từ mẫu</button></p>
+<label>Khối ký tên theo mẫu trường (sửa được)</label><textarea id="p-signature"></textarea>
+<div id="profileMsg"></div>
+</section>
+
+<section id="tab-dangky" class="card hidden">
+<h2>Đăng ký bản đầy đủ — dành cho quản trị</h2>
+<p class="muted">Danh sách giáo viên đã đăng ký để dùng tiếp sau 3 giáo án miễn phí. “Khách nóng” là người đã soạn đủ 3 giáo án trước khi đăng ký.</p>
+<div id="adminLogin"><label>Mật khẩu quản trị (nếu máy chủ đã đặt ADMIN_PASSWORD)</label><input id="admin-pw" type="password"><button class="primary" onclick="adminLogin()">Đăng nhập quản trị</button></div>
+<p><input id="lead-q" placeholder="Tìm tên, email, số điện thoại…" oninput="loadLeads()">
+<select id="lead-status" onchange="loadLeads()"><option value="">Tất cả trạng thái</option><option>Chưa liên hệ</option><option>Đã liên hệ</option><option>Đã dùng bản đầy đủ</option></select>
+<button class="secondary" onclick="exportLeads()">Xuất CSV</button></p>
+<div id="leadList"></div>
+</section>
+</main>
+
+<div id="registerModal" class="modal hidden"><div class="card">
+<h2>Bạn đã nhận đủ 3 giáo án miễn phí 🎉</h2>
+<p>Giáo án của bạn đã soạn xong về nội dung và chấm điểm — chỉ cần đăng ký để mở tiếp. Đăng ký xong, giáo án đang chờ sẽ được tạo ngay, và bạn không cần đăng ký lại lần nào nữa.</p>
+<p class="muted">Chúng tôi chỉ dùng thông tin này để liên hệ tư vấn bản đầy đủ, không chia sẻ cho bên khác.</p>
+<label>Họ tên *</label><input id="r-name">
+<label>Số điện thoại * (10 số, bắt đầu bằng 0)</label><input id="r-phone">
+<label>Email *</label><input id="r-email">
+<label>Cấp / Môn dạy (tùy chọn)</label><input id="r-subject" placeholder="VD: Tiểu học — Toán">
+<div id="r-error" style="color:#b91c1c"></div>
+<p><button class="primary" onclick="doRegister()">Đăng ký và tạo giáo án ngay</button> <button class="secondary" onclick="closeRegister()">Để sau</button></p>
+</div></div>
+
+<script>
+const TABS=[['soan','Soạn giáo án'],['thuvien','Thư viện'],['congdong','Cộng đồng'],['to','Tổ chuyên môn'],['thongke','Thống kê & Gói'],['hoso','Hồ sơ'],['dangky','Đăng ký bản đầy đủ']];
+const SECTIONS=[['muc_tieu','1. Yêu cầu cần đạt'],['pham_chat_nang_luc','2. Phẩm chất và năng lực'],['thiet_bi','3. Thiết bị dạy học và học liệu'],['khoi_dong','4. Hoạt động khởi động'],['hinh_thanh','5. Hoạt động hình thành kiến thức mới'],['luyen_tap','6. Hoạt động luyện tập, thực hành'],['van_dung','7. Hoạt động vận dụng, trải nghiệm'],['tien_trinh','8. Tiến trình dạy học'],['danh_gia','9. Đánh giá và tiêu chí'],['rut_kinh_nghiem','10. Điều chỉnh và rút kinh nghiệm']];
+let me={}, profile={}, currentPlan=null, pendingPlan=null, myOrgs=[];
+const $=id=>document.getElementById(id);
+function showTab(key){TABS.forEach(([k])=>{$( 'tab-'+k).classList.toggle('hidden',k!==key)});document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===key));if(key==='thuvien')loadLibrary();if(key==='congdong')loadCommunity();if(key==='to')loadOrgs();if(key==='thongke')loadStats();if(key==='hoso')loadProfile();if(key==='dangky')loadLeads();}
+document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>`<button data-tab="${k}" onclick="showTab('${k}')">${l}</button>`).join('');
+async function api(path,method='GET',body){const r=await fetch(path,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const t=await r.text();let j={};try{j=JSON.parse(t)}catch(e){}if(!r.ok)throw j;return j;}
+async function refreshMe(){me=await api('/api/me');$('banner').innerHTML=me.registered?`<b>Đã đăng ký bản đầy đủ.</b> Bạn soạn không giới hạn.`:`<b>Bạn đã soạn ${me.planCount}/3 giáo án miễn phí — còn ${me.remaining} giáo án miễn phí.</b> Soạn đến giáo án thứ 4, app sẽ hỏi họ tên, số điện thoại và email để mở tiếp.`;}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function createPlan(){
+  const payload={level:$('f-level').value,subject:$('f-subject').value,grade:$('f-grade').value,title:$('f-title').value,textbook:$('f-textbook').value,lessonMinutes:Number($('f-minutes').value)||35,week:$('f-week').value,periods:Number($('f-periods').value)||1};
+  if(!payload.title){alert('Vui lòng nhập tên bài.');return;}
+  try{currentPlan=await api('/api/plans','POST',payload);pendingPlan=null;renderPlan();refreshMe();}
+  catch(e){if(e.error==='NEEDS_REGISTRATION'){pendingPlan=payload;$('registerModal').classList.remove('hidden');}else alert(e.message||e.error||'Không tạo được giáo án.');}
+}
+function closeRegister(){$('registerModal').classList.add('hidden');}
+async function doRegister(){
+  try{const r=await api('/api/register','POST',{name:$('r-name').value,phone:$('r-phone').value,email:$('r-email').value,subject:$('r-subject').value});
+  closeRegister();refreshMe();alert('Đăng ký xong!');if(pendingPlan){currentPlan=await api('/api/plans','POST',pendingPlan);pendingPlan=null;renderPlan();refreshMe();}}
+  catch(e){$('r-error').textContent=e.errors?Object.values(e.errors).join(' '):(e.message||'Đăng ký chưa thành công.');}
+}
+function renderPlan(){
+  if(!currentPlan)return;
+  const p=currentPlan;
+  const badge=p.reviewState==='approved'?'<span class="badge">Tổ đã duyệt ✓</span>':'';
+  const acts=(p.activities||[]).map((a,i)=>`<tr><td>${esc(a.name)}</td><td><input value="${a.duration}" type="number" onchange="editAct(${i},'duration',this.value)"></td><td>${esc(a.teacher)}</td><td>${esc(a.student)}</td></tr>`).join('');
+  const secs=SECTIONS.map(([k,l])=>`<label>${l}</label><textarea id="sec-${k}">${esc(p.sections?.[k]||'')}</textarea><p><select id="mode-${k}"><option value="shorten">Rút gọn</option><option value="detail">Chi tiết hơn</option><option value="game">Thêm trò chơi</option><option value="split">Tách GV–HS</option></select> <button class="secondary" onclick="rewriteSec('${k}')">Áp dụng gợi ý</button></p>`).join('');
+  const issues=(p.issues||[]).map(i=>`<li>${esc(i.message)} — <i>${esc(i.suggestion)}</i></li>`).join('')||'<li>Không có vấn đề cần sửa.</li>';
+  $('planResult').innerHTML=`<div class="card"><h3>${esc(p.title)} ${badge}</h3><p class="muted">${esc(p.level)} — ${esc(p.subject)} — ${esc(p.grade)} — Bộ ${esc(p.textbook)} — ${p.lessonMinutes} phút — Tổng hoạt động: ${p.totalMinutes} phút (chỉ tính thời lượng chính, không cộng phút bước con)</p>
+  <p><b>Điểm tự chấm: ${p.score}/100</b></p><ul>${issues}</ul>
+  <table><tr><th>Hoạt động</th><th>Phút</th><th>Giáo viên</th><th>Học sinh</th></tr>${acts}</table>
+  ${secs}
+  <p><button class="primary" onclick="savePlan()">Lưu thay đổi</button>
+  <button class="secondary" onclick="printPlan()">Xem bản in A4</button>
+  <button class="secondary" onclick="downloadPlan('doc')">Tải .doc</button>
+  <button class="secondary" onclick="downloadPlan('txt')">Tải .txt</button>
+  <button class="secondary" onclick="sharePlan()">Chia sẻ lên Cộng đồng</button>
+  <button class="secondary" onclick="duplicatePlan()">Nhân bản (không tính vào 3 giáo án)</button>
+  <button class="secondary" onclick="submitReview()">Nộp tổ duyệt</button></p>
+  <p class="muted">Yêu cầu cần đạt trong giáo án này là gợi ý tham khảo — giáo viên đối chiếu Sách giáo viên trước khi dùng, không phải kho chính thức.</p></div>`;
+  window.scrollTo({top:$('planResult').offsetTop,behavior:'smooth'});
+}
+function editAct(i,field,val){currentPlan.activities[i][field]=field==='duration'?Number(val):val;}
+async function rewriteSec(k){const mode=$('mode-'+k).value;const r=await api('/api/rewrite','POST',{text:$('sec-'+k).value,mode});$('sec-'+k).value=r.text;}
+async function savePlan(){const secs={};SECTIONS.forEach(([k])=>secs[k]=$('sec-'+k).value);currentPlan=await api('/api/plans/'+currentPlan.id,'PUT',{sections:secs,activities:currentPlan.activities});renderPlan();alert('Đã lưu. Điểm mới: '+currentPlan.score+'/100');}
+function printPlan(){const w=window.open('','_blank');w.document.write('<html><head><meta charset="utf-8"><title>In giáo án</title><style>body{font-family:"Times New Roman",serif}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:6px}</style></head><body>'+document.querySelector('#planResult .card').innerHTML+'<script>window.print()<\/script></body></html>');w.document.close();}
+function downloadPlan(f){window.location='/api/plans/'+currentPlan.id+'/download?format='+f;}
+async function sharePlan(){await api('/api/plans/'+currentPlan.id+'/share','POST',{});alert('Đã chia sẻ lên Cộng đồng.');}
+async function duplicatePlan(){currentPlan=await api('/api/plans/'+currentPlan.id+'/duplicate','POST',{});renderPlan();alert('Đã nhân bản. Bản sao không tính vào 3 giáo án miễn phí.');}
+async function submitReview(){await loadOrgs();const orgId=prompt('Nhập ID tổ (xem ở tab Tổ chuyên môn):');if(!orgId)return;currentPlan=await api('/api/plans/'+currentPlan.id+'/submit','POST',{orgId});renderPlan();alert('Đã nộp duyệt.');}
+function showBatch(){$('batchBox').classList.toggle('hidden');}
+async function createBatch(){
+  try{const r=await api('/api/plans/batch','POST',{lines:$('batchLines').value,level:$('f-level').value,subject:$('f-subject').value,grade:$('f-grade').value,textbook:$('f-textbook').value,lessonMinutes:Number($('f-minutes').value)||35});
+  $('batchResult').innerHTML=`<p>Đã tạo ${r.created.length} giáo án.</p>`+(r.errors.length?`<p>Lỗi: ${r.errors.map(e=>esc(e.lesson)+': '+esc(e.error)).join('<br>')}</p>`:'');refreshMe();loadLibrary();}
+  catch(e){if(e.error==='NEEDS_REGISTRATION'){alert(e.message);}else alert(e.message||'Soạn hàng loạt chưa thành công.');}
+}
+function planCard(p,actions){return `<div class="card"><b>${esc(p.title)}</b> ${p.reviewState==='approved'?'<span class="badge">Tổ đã duyệt ✓</span>':''} ${p.reviewState==='pending'?'<span class="badge">Chờ duyệt</span>':''} ${p.reviewState==='needs_edit'?'<span class="badge">Cần sửa</span>':''}<p class="muted">${esc(p.level)} — ${esc(p.subject)} — ${esc(p.grade)} — Điểm ${p.score}/100${p.authorName?` — ${esc(p.authorName)}${p.authorSchool?' ('+esc(p.authorSchool)+')':''}`:''}${p.isCommunity?` — Lượt dùng lại: ${p.reuseCount||0}`:''}</p><p>${actions}</p></div>`;}
+async function loadLibrary(){const q=$('lib-q').value,lv=$('lib-level').value;const list=await api(`/api/plans?q=${encodeURIComponent(q)}&level=${encodeURIComponent(lv)}`);$('libList').innerHTML=list.length?list.map(p=>planCard(p,`<button class="secondary" onclick="openPlan('${p.id}')">Mở / sửa</button> <button class="secondary" onclick="dupById('${p.id}')">Nhân bản</button> <button class="secondary" onclick="delPlan('${p.id}')">Xóa</button>`)).join(''):'<p class="muted">Thư viện trống. Hãy soạn giáo án đầu tiên.</p>';}
+async function openPlan(id){currentPlan=await api('/api/plans/'+id);showTab('soan');renderPlan();}
+async function dupById(id){await api('/api/plans/'+id+'/duplicate','POST',{});loadLibrary();}
+async function delPlan(id){if(confirm('Xóa giáo án này?')){await api('/api/plans/'+id,'DELETE');loadLibrary();}}
+async function loadCommunity(){const q=$('com-q').value;const list=await api(`/api/community?q=${encodeURIComponent(q)}`);$('comList').innerHTML=list.length?list.map(p=>planCard(p,`<button class="secondary" onclick="useCommunity('${p.id}')">Dùng ngay (tạo bản sao)</button> <button class="secondary" onclick="openPlan('${p.id}')">Xem</button>`)).join(''):'<p class="muted">Cộng đồng chưa có giáo án nào.</p>';}
+async function useCommunity(id){currentPlan=await api('/api/community/'+id+'/use','POST',{});showTab('soan');renderPlan();alert('Đã tạo bản sao độc lập. Lượt dùng lại của bản gốc đã tăng.');}
+async function createOrg(){const o=await api('/api/orgs','POST',{name:$('org-name').value});alert('Đã tạo tổ. Mã mời: '+o.inviteCode);loadOrgs();}
+async function joinOrg(){const o=await api('/api/orgs/join','POST',{code:$('org-code').value});alert('Đã tham gia tổ: '+o.name);loadOrgs();}
+async function loadOrgs(){myOrgs=await api('/api/orgs');$('orgList').innerHTML=myOrgs.length?myOrgs.map(o=>`<div class="card"><b>${esc(o.name)}</b><p class="muted">Mã mời: ${o.inviteCode} — ID tổ: ${o.id}</p><p>Thành viên: ${o.members.map(m=>esc(m.name||m.guestId.slice(0,8))+' ('+esc(m.role)+')').join(', ')}</p><p><button class="secondary" onclick="reviewPending('${o.id}')">Xem giáo án chờ duyệt của tổ</button></p><div id="pending-${o.id}"></div></div>`).join(''):'<p class="muted">Bạn chưa thuộc tổ nào.</p>';
+  $('stat-org').innerHTML='<option value="">Toàn app</option>'+myOrgs.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');}
+async function reviewPending(orgId){const plans=await api('/api/orgs/'+orgId+'/plans');
+  $('pending-'+orgId).innerHTML=plans.length?plans.map(p=>`<div class="card"><b>${esc(p.title)}</b> — Trạng thái: ${p.reviewState}<p><input id="cmt-${p.id}" placeholder="Bình luận duyệt"><button class="secondary" onclick="doReview('${p.id}','approve')">Duyệt</button> <button class="secondary" onclick="doReview('${p.id}','needs_edit')">Yêu cầu sửa</button> <button class="secondary" onclick="doWithdraw('${p.id}')">Rút khỏi hàng chờ</button></p><p class="muted">Lịch sử: ${(p.reviewHistory||[]).map(h=>esc(h.decision)+' — '+esc(h.comment||'')).join(' | ')||'—'}</p></div>`).join(''):'<p class="muted">Tổ chưa có giáo án nào nộp duyệt.</p>';}
+async function doReview(id,decision){const r=await api('/api/plans/'+id+'/review','POST',{decision,comment:$('cmt-'+id).value});alert('Đã cập nhật: '+r.reviewState);loadOrgs();}
+async function doWithdraw(id){await api('/api/plans/'+id+'/withdraw','POST',{});alert('Đã rút khỏi hàng chờ.');loadOrgs();}
+async function loadStats(){const org=$('stat-org').value;const s=await api('/api/stats?orgId='+encodeURIComponent(org));$('statBox').innerHTML=`<p>Tổng giáo án: <b>${s.total}</b> — Đã nộp: ${s.submitted} — Chờ duyệt: ${s.pending} — Đã duyệt: ${s.approved} — Cần sửa: ${s.needsEdit} — Tỉ lệ duyệt: <b>${s.approvalRate}%</b></p><p>Theo môn: ${Object.entries(s.bySubject).map(([k,v])=>esc(k)+': '+v).join(', ')||'—'}</p><p>Theo cấp: ${Object.entries(s.byLevel).map(([k,v])=>esc(k)+': '+v).join(', ')||'—'}</p><p>Giáo án cộng đồng: ${s.communityPlans} — Tổng lượt dùng lại: ${s.communityReuse}</p><h4>Duyệt gần đây</h4><ul>${s.recentReviews.map(r=>`<li>${esc(r.plan)} — ${esc(r.decision)} — ${esc(r.comment||'')}</li>`).join('')||'<li>Chưa có.</li>'}</ul>`;}
+async function loadProfile(){profile=await api('/api/profile');$('p-name').value=profile.name||'';$('p-school').value=profile.school||'';$('p-department').value=profile.department||'';$('p-year').value=profile.schoolYear||'';$('p-textbook').value=profile.textbook||'Kết nối tri thức';$('p-subject').value=(profile.subject?profile.subject+' — ':'')+(profile.grade||'');$('p-size').value=profile.classSize||'';$('p-support').value=profile.supportCount||'';$('p-class').value=profile.classInfo||'';$('p-sample').value=profile.schoolSample||'';$('p-signature').value=profile.conventions?.signatureBlock||'';}
+async function saveProfile(){const parts=$('p-subject').value.split('—');profile={...profile,name:$('p-name').value,school:$('p-school').value,department:$('p-department').value,schoolYear:$('p-year').value,textbook:$('p-textbook').value,subject:(parts[0]||'').trim(),grade:(parts[1]||'').trim(),classSize:$('p-size').value,supportCount:$('p-support').value,classInfo:$('p-class').value,schoolSample:$('p-sample').value,conventions:{...(profile.conventions||{}),signatureBlock:$('p-signature').value}};await api('/api/profile','PUT',profile);$('profileMsg').textContent='Đã lưu hồ sơ.';}
+async function extractSample(){const c=await api('/api/profile/extract','POST',{sample:$('p-sample').value});$('p-signature').value=c.signatureBlock||'';$('profileMsg').textContent='Đã trích quy ước: thứ tự mục: '+(c.sectionOrder.join(', ')||'—')+'; thuật ngữ: '+(c.fixedTerms.join(', ')||'—')+'. Giáo viên sửa lại trước khi áp dụng.';await saveProfile();}
+async function adminLogin(){const r=await api('/api/admin/login','POST',{password:$('admin-pw').value});if(r.ok)loadLeads();}
+function exportLeads(){window.location='/api/leads/export';}
+async function loadLeads(){try{const q=$('lead-q').value,st=$('lead-status').value;const list=await api(`/api/leads?q=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}`);$('leadList').innerHTML=list.length?list.map(l=>`<div class="card"><b>${esc(l.name)}</b> ${l.isHot?'<span class="badge">Khách nóng</span>':''}<p class="muted">Giáo án lúc đăng ký: ${l.plansCreatedAtRegistration} — Trạng thái: ${l.status} — ${esc(l.level)} ${esc(l.subject)}</p><p><select onchange="setLeadStatus('${l.id}',this.value)"><option ${l.status==='Chưa liên hệ'?'selected':''}>Chưa liên hệ</option><option ${l.status==='Đã liên hệ'?'selected':''}>Đã liên hệ</option><option ${l.status==='Đã dùng bản đầy đủ'?'selected':''}>Đã dùng bản đầy đủ</option></select></p></div>`).join(''):'<p class="muted">Chưa có lead nào.</p>';}catch(e){$('leadList').innerHTML='<p class="muted">Cần đăng nhập quản trị để xem lead (nếu máy chủ đã đặt ADMIN_PASSWORD).</p>';}}
+async function setLeadStatus(id,status){await api('/api/leads/'+id,'PATCH',{status});loadLeads();}
+refreshMe();loadProfile();showTab('soan');
+</script>
+</body>
+</html>

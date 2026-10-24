@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: app-soan-giao-an
+    env: node
+    plan: free
+    startCommand: node server.js
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
