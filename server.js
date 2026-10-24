@@ -292,7 +292,13 @@ const server = http.createServer(async (req, res) => {
       const html = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
       return sendText(res, 200, html, 'text/html; charset=utf-8');
     }
-    if (p === '/favicon.ico') return sendText(res, 204, '', 'text/plain');
+    if (p === '/favicon.svg' || p === '/favicon.ico') {
+      try {
+        const buf = fs.readFileSync(path.join(PUBLIC_DIR, 'favicon.svg'));
+        res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' });
+        return res.end(buf);
+      } catch (e) { return sendText(res, 204, '', 'text/plain'); }
+    }
     if (!p.startsWith('/api/')) return sendJson(res, 404, { error: 'NOT_FOUND' });
 
     const body = (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') ? await readBody(req) : {};

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <circle cx="256" cy="256" r="256" fill="#0f766e"/>
+  <!-- open book: two white pages -->
+  <path d="M84 196 Q172 164 252 196 L252 372 Q172 340 84 372 Z" fill="#ffffff"/>
+  <path d="M428 196 Q340 164 260 196 L260 372 Q340 340 428 372 Z" fill="#ffffff"/>
+  <rect x="252" y="196" width="8" height="176" fill="#0f766e"/>
+  <!-- gold pencil, diagonal -->
+  <g transform="rotate(38 256 268)">
+    <rect x="238" y="130" width="36" height="210" rx="10" fill="#eab308"/>
+    <path d="M238 340 L274 340 L256 382 Z" fill="#facc15"/>
+    <rect x="238" y="158" width="36" height="8" fill="#0f766e"/>
+  </g>
+  <!-- gold check, top right -->
+  <path d="M378 108 L404 134 L452 84" stroke="#facc15" stroke-width="22" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
