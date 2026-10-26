@@ -164,35 +164,36 @@ function expectedFor(name, title, subject) {
 }
 function detailFor(name, title, subject, grade) {
   const who = `${subject}${grade ? ' — ' + grade : ''}`;
+  const T = title || 'bài học';
   if (name === 'Khởi động') return {
-    teacher: `Giáo viên tổ chức trò chơi / câu hỏi khởi động gắn với bài “${title}” (${who}), nêu luật chơi, đặt câu hỏi gợi mở, khích lệ HS trả lời.`,
-    student: `Học sinh tham gia trò chơi, trả lời câu hỏi khởi động, nêu dự đoán về nội dung bài mới.`,
-    steps: ['GV nêu luật chơi và câu hỏi khởi động.', 'HS chơi / trả lời, GV khích lệ và dẫn dắt vào bài mới.', 'GV chốt vấn đề, giới thiệu tên bài.'],
+    teacher: `GV ổn định lớp, nói rõ ràng: “Cô / Thầy chào cả lớp. Trước khi vào bài mới, chúng ta cùng chơi một trò chơi ngắn nhé. Luật chơi như sau: cô / thầy nêu câu hỏi, bạn nào biết thì giơ tay, trả lời đúng được cộng điểm cho tổ của mình.” GV đặt câu hỏi khởi động gắn với bài “${T}” (${who}), gọi HS trả lời, khích lệ bằng lời cụ thể: “Bạn trả lời rất nhanh, cả lớp vỗ tay khen bạn nào.” Nếu HS trả lời chưa đúng, GV không chê mà gợi ý tiếp: “Bạn đã gần đúng rồi, bạn nào bổ sung giúp bạn nào?” Sau đó GV chuyển ý rõ ràng: “Từ trò chơi vừa rồi, hôm nay chúng ta sẽ học bài mới.” GV viết tên bài “${T}” lên bảng, yêu cầu HS đọc tên bài và mở sách.`,
+    student: `Học sinh ổn định chỗ ngồi, tham gia trò chơi khởi động, giơ tay trả lời câu hỏi, nhận xét câu trả lời của bạn, đọc tên bài mới và mở sách theo yêu cầu của GV.`,
+    steps: ['GV ổn định lớp, nêu luật chơi và câu hỏi khởi động gắn với bài mới.', 'HS chơi / trả lời, GV khích lệ, gợi ý bổ sung khi HS trả lời chưa đúng.', 'GV chốt vấn đề, viết tên bài lên bảng, HS đọc tên bài và mở sách.'],
   };
   if (name.startsWith('Kiểm tra')) return {
-    teacher: `Giáo viên gọi 2–3 HS nhắc lại kiến thức bài trước, đặt câu hỏi kiểm tra, nhận xét và sửa sai ngay, kết nối sang bài “${title}”.`,
-    student: `Học sinh trả lời câu hỏi kiểm tra, nhận xét câu trả lời của bạn, nêu chỗ còn chưa rõ.`,
-    steps: ['GV đặt câu hỏi kiểm tra bài cũ.', 'HS trả lời, bạn nhận xét, GV sửa sai và chốt kiến thức.', 'GV kết nối kiến thức cũ sang bài mới.'],
+    teacher: `GV nói: “Bây giờ cô / thầy kiểm tra bài cũ một chút nhé.” GV gọi tên 2–3 HS cụ thể, đặt câu hỏi kiểm tra rõ ràng, ví dụ: “Bạn hãy nhắc lại cho cả lớp nghe kiến thức chính của bài trước là gì? Bạn cho ví dụ minh họa được không?” Khi HS trả lời, GV lắng nghe hết câu, nhận xét cụ thể: “Bạn nhắc lại đúng ý chính, nhưng còn thiếu ý này, bạn nào bổ sung?” GV sửa sai ngay trên bảng, viết lại ý đúng, yêu cầu cả lớp đọc lại ý đúng một lần. Cuối hoạt động, GV kết nối rõ ràng: “Kiến thức bài trước chính là nền tảng để hôm nay chúng ta học bài “${T}”, vì vậy các em cần nhớ kỹ ý này.”`,
+    student: `Học sinh được gọi tên thì đứng dậy trả lời câu hỏi kiểm tra, cả lớp lắng nghe, nhận xét và bổ sung câu trả lời của bạn, đọc lại ý đúng trên bảng và nêu chỗ còn chưa rõ để GV giải thích thêm.`,
+    steps: ['GV gọi tên HS, đặt câu hỏi kiểm tra bài cũ rõ ràng.', 'HS trả lời, bạn nhận xét, GV sửa sai ngay trên bảng và cho cả lớp đọc lại ý đúng.', 'GV kết nối kiến thức cũ sang bài mới và nêu rõ vì sao cần nhớ ý đó.'],
   };
   if (name.startsWith('Hình thành')) return {
-    teacher: `Giáo viên nêu tình huống / ví dụ, đặt câu hỏi dẫn dắt từng bước, cho HS quan sát tranh / đồ dùng / ví dụ, chốt kiến thức trọng tâm của bài “${title}” và viết bảng.`,
-    student: `Học sinh quan sát, thảo luận nhóm, trả lời câu hỏi dẫn dắt, rút ra kiến thức mới và nhắc lại ý chính.`,
-    steps: ['GV nêu tình huống, HS quan sát và dự đoán.', 'HS thảo luận nhóm, trả lời câu hỏi dẫn dắt.', 'GV chốt kiến thức, HS nhắc lại và ghi nhớ.'],
+    teacher: `GV nêu tình huống dẫn dắt bằng lời nói cụ thể: “Các em hãy quan sát tranh / ví dụ trên bảng và cho cô / thầy biết: các em thấy gì? Điều gì khiến các em thắc mắc?” GV cho HS quan sát 1–2 phút, sau đó đặt câu hỏi dẫn dắt theo từng bước, không hỏi dồn: bước 1 hỏi “Cái gì?”, bước 2 hỏi “Vì sao lại như vậy?”, bước 3 hỏi “Vậy chúng ta rút ra được điều gì?” Khi HS trả lời, GV ghi ý đúng lên bảng theo từng ý, hỏi lại: “Bạn nào có cách nói khác mà vẫn đúng ý này không?” GV chốt kiến thức bằng lời khẳng định rõ ràng: “Như vậy, kiến thức trọng tâm của bài “${T}” là…”, viết khung kiến thức lên bảng, yêu cầu HS đọc lại khung kiến thức 2 lần và ghi vào vở. Với HS còn lúng túng, GV nói riêng: “Bạn cứ nói theo ý hiểu của mình, sai cũng không sao, cô / thầy sẽ giúp bạn sửa.”`,
+    student: `Học sinh quan sát tranh / ví dụ, suy nghĩ và trả lời từng câu hỏi dẫn dắt của GV, thảo luận nhóm 2–4 bạn để thống nhất ý trả lời, trình bày ý của nhóm, nhận xét ý của nhóm bạn, đọc lại khung kiến thức trên bảng và ghi vào vở.`,
+    steps: ['GV nêu tình huống, HS quan sát và dự đoán, GV hỏi “Các em thấy gì?”.', 'HS thảo luận nhóm, trả lời câu hỏi dẫn dắt theo từng bước “Cái gì? Vì sao? Rút ra điều gì?”.', 'GV chốt kiến thức, viết khung kiến thức lên bảng, HS đọc lại và ghi vào vở.'],
   };
   if (name.startsWith('Luyện tập')) return {
-    teacher: `Giáo viên giao bài tập cụ thể: Bài tập 1 (cơ bản, tất cả HS làm), Bài tập 2 (vận dụng, HS khá làm thêm), hướng dẫn từng bước cho HS cần hỗ trợ, chữa bài và công bố đáp án. Phân hóa: HS cần hỗ trợ làm bài cơ bản có gợi ý từng bước; HS khá/giỏi làm thêm bài vận dụng nâng cao.`,
-    student: `Học sinh làm Bài tập 1 vào vở, HS khá làm thêm Bài tập 2, trình bày cách làm, đối chiếu đáp án và sửa bài của mình.`,
-    steps: ['GV giao Bài tập 1 (cơ bản) và Bài tập 2 (vận dụng), nêu yêu cầu rõ ràng.', 'HS làm bài cá nhân / theo cặp, GV đi hỗ trợ từng bàn.', 'HS trình bày cách làm, GV chữa bài, công bố đáp án và chốt cách làm đúng.'],
+    teacher: `GV giao bài tập bằng lời nói rõ ràng, từng bài một, không giao dồn: “Bây giờ các em mở sách, làm Bài tập 1. Yêu cầu của Bài tập 1 là… Các em làm cá nhân vào vở, bạn nào làm xong thì giơ tay, cô / thầy sẽ kiểm tra.” GV đi từng bàn, quan sát và hướng dẫn riêng: với HS làm chậm, GV nói: “Bạn làm từng bước thế này nhé: bước 1…, bước 2… Bạn thử làm lại xem.” Với HS làm nhanh, GV giao thêm: “Bạn làm xong Bài tập 1 rồi thì làm tiếp Bài tập 2, bài này khó hơn một chút, bạn thử suy nghĩ xem có cách làm nào khác không?” Hết thời gian, GV gọi HS lên bảng trình bày, hỏi cả lớp: “Bạn làm như vậy đúng hay sai? Vì sao?” GV chữa bài chi tiết từng bước trên bảng, công bố đáp án, yêu cầu HS đối chiếu và tự sửa bài của mình bằng bút khác màu, rồi chốt: “Cách làm đúng của dạng bài này là… Các em nhớ kỹ bước này nhé.”`,
+    student: `Học sinh mở sách, nghe kỹ yêu cầu từng bài tập, làm Bài tập 1 (cơ bản) cá nhân vào vở, HS khá làm thêm Bài tập 2 (vận dụng), giơ tay khi làm xong hoặc khi gặp khó khăn, lên bảng trình bày cách làm, nhận xét bài của bạn, đối chiếu đáp án và tự sửa bài bằng bút khác màu.`,
+    steps: ['GV giao Bài tập 1 (cơ bản) và Bài tập 2 (vận dụng), nêu yêu cầu từng bài một cách rõ ràng.', 'HS làm bài cá nhân / theo cặp, GV đi từng bàn, hướng dẫn riêng HS chậm và giao thêm cho HS nhanh.', 'HS trình bày cách làm lên bảng, GV chữa từng bước, công bố đáp án, HS đối chiếu và tự sửa bài.'],
   };
   if (name.startsWith('Vận dụng')) return {
-    teacher: `Giáo viên nêu tình huống thực tế gần gũi với bài “${title}”, giao nhiệm vụ vận dụng theo nhóm, hướng dẫn HS liên hệ cuộc sống và trình bày sản phẩm.`,
-    student: `Học sinh thảo luận nhóm, vận dụng kiến thức vào tình huống thực tế, trình bày sản phẩm và nhận xét sản phẩm của nhóm bạn.`,
-    steps: ['GV nêu tình huống thực tế, giao nhiệm vụ nhóm.', 'HS thảo luận, làm sản phẩm vận dụng.', 'Các nhóm trình bày, GV nhận xét và liên hệ thực tế.'],
+    teacher: `GV nêu tình huống thực tế bằng lời nói gần gũi: “Bây giờ cô / thầy đố các em: trong cuộc sống hằng ngày, các em gặp tình huống này ở đâu? Nếu gặp tình huống đó, các em sẽ làm gì bằng kiến thức bài “${T}” vừa học?” GV chia nhóm, giao nhiệm vụ rõ ràng cho từng nhóm: “Nhóm 1 tìm ví dụ, nhóm 2 trình bày cách giải quyết, nhóm 3 nhận xét.” GV đi hỗ trợ từng nhóm, gợi ý khi nhóm bí: “Các em thử nghĩ xem, kiến thức vừa học giúp mình làm bước nào trước?” Khi các nhóm trình bày, GV nhận xét cụ thể từng nhóm, không nhận xét chung chung, và kết luận: “Như vậy kiến thức bài hôm nay không chỉ để làm bài tập mà còn dùng được trong cuộc sống hằng ngày.”`,
+    student: `Học sinh nghe tình huống thực tế, thảo luận nhóm để tìm ví dụ và cách giải quyết bằng kiến thức vừa học, làm sản phẩm / câu trả lời của nhóm, trình bày trước lớp, nhận xét sản phẩm của nhóm bạn và nêu liên hệ với cuộc sống của mình.`,
+    steps: ['GV nêu tình huống thực tế, chia nhóm và giao nhiệm vụ rõ ràng cho từng nhóm.', 'HS thảo luận nhóm, làm sản phẩm vận dụng, GV đi hỗ trợ và gợi ý khi nhóm bí.', 'Các nhóm trình bày, GV nhận xét cụ thể từng nhóm và kết luận ý nghĩa thực tế của bài học.'],
   };
   return {
-    teacher: `Giáo viên cho HS nhắc lại kiến thức trọng tâm bài “${title}”, nhận xét tiết học, giao bài tập về nhà và dặn dò chuẩn bị bài sau.`,
-    student: `Học sinh nhắc lại ý chính của bài, ghi bài tập về nhà, nêu điều còn thắc mắc (nếu có).`,
-    steps: ['HS nhắc lại 2–3 ý chính của bài.', 'GV nhận xét tiết học, giao bài tập về nhà.', 'HS ghi bài tập về nhà và chuẩn bị bài sau.'],
+    teacher: `GV gọi HS nhắc lại bài bằng câu hỏi cụ thể: “Hôm nay chúng ta đã học được những ý chính nào? Bạn nhắc lại ý thứ nhất, bạn khác nhắc lại ý thứ hai nhé.” GV ghi các ý chính lên bảng, nhận xét tiết học cụ thể: “Hôm nay lớp mình làm bài rất tốt ở phần…, phần… còn cần cố gắng thêm.” GV giao bài tập về nhà rõ ràng: “Về nhà các em làm bài tập còn lại trong sách, đọc trước bài sau và chuẩn bị…” GV dặn dò: “Các em nhớ mang đủ sách vở cho tiết sau nhé.”`,
+    student: `Học sinh lần lượt nhắc lại từng ý chính của bài, ghi các ý chính vào vở, lắng nghe nhận xét của GV, ghi bài tập về nhà và chuẩn bị bài sau, nêu điều còn thắc mắc (nếu có) để GV giải đáp trước khi hết tiết.`,
+    steps: ['HS lần lượt nhắc lại từng ý chính của bài, GV ghi ý chính lên bảng.', 'GV nhận xét tiết học cụ thể, khen điểm tốt và nêu điểm cần cố gắng.', 'GV giao bài tập về nhà rõ ràng, HS ghi bài và chuẩn bị bài sau.'],
   };
 }
 function generatePlan(input, profile) {
