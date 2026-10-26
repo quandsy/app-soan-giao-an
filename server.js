@@ -148,9 +148,52 @@ function scorePlan(plan) {
   return { score: Math.min(100, score), issues, totalMinutes: total };
 }
 function scaleActivities(lessonMinutes) {
-  if (lessonMinutes >= 45) return [[5, 'Khởi động'], [20, 'Hình thành kiến thức mới'], [15, 'Luyện tập, thực hành'], [5, 'Vận dụng']];
-  if (lessonMinutes >= 40) return [[5, 'Khởi động'], [17, 'Hình thành kiến thức mới'], [13, 'Luyện tập, thực hành'], [5, 'Vận dụng']];
-  return [[5, 'Khởi động'], [15, 'Hình thành kiến thức mới'], [10, 'Luyện tập, thực hành'], [5, 'Vận dụng']];
+  // 6 hoạt động (theo góp ý giáo viên thử app 26/10/2026): tổng vẫn đúng thời lượng tiết.
+  if (lessonMinutes >= 45) return [[5, 'Khởi động'], [5, 'Kiểm tra bài cũ, kết nối'], [17, 'Hình thành kiến thức mới'], [10, 'Luyện tập, thực hành'], [5, 'Vận dụng, trải nghiệm'], [3, 'Củng cố, dặn dò']];
+  if (lessonMinutes >= 40) return [[5, 'Khởi động'], [5, 'Kiểm tra bài cũ, kết nối'], [14, 'Hình thành kiến thức mới'], [9, 'Luyện tập, thực hành'], [4, 'Vận dụng, trải nghiệm'], [3, 'Củng cố, dặn dò']];
+  return [[3, 'Khởi động'], [5, 'Kiểm tra bài cũ, kết nối'], [12, 'Hình thành kiến thức mới'], [8, 'Luyện tập, thực hành'], [4, 'Vận dụng, trải nghiệm'], [3, 'Củng cố, dặn dò']];
+}
+function expectedFor(name, title, subject) {
+  const base = `Bài “${title}” (${subject || 'môn học'}). Giáo viên sửa lại đáp án cụ thể theo Sách giáo viên trước khi dạy.`;
+  if (name === 'Khởi động') return `Câu trả lời dự kiến: HS nêu được liên hệ với bài cũ / chủ đề bài mới, hào hứng tham gia trò chơi khởi động. ${base}`;
+  if (name.startsWith('Kiểm tra')) return `Câu trả lời dự kiến: HS nhắc lại đúng kiến thức trọng tâm bài trước, trả lời đúng câu hỏi kiểm tra của GV. ${base}`;
+  if (name.startsWith('Hình thành')) return `Câu trả lời dự kiến: HS quan sát, thảo luận và rút ra đúng kiến thức mới của bài, trình bày được ý chính bằng lời của mình. ${base}`;
+  if (name.startsWith('Luyện tập')) return `Đáp án dự kiến — Bài tập 1 (cơ bản): HS làm đúng yêu cầu, trình bày được cách làm. Bài tập 2 (vận dụng): HS làm đúng và giải thích được vì sao. GV chấp nhận cách làm khác nếu đúng bản chất. ${base}`;
+  if (name.startsWith('Vận dụng')) return `Câu trả lời dự kiến (mở): HS đưa ra được ví dụ thực tế đúng với bài học và giải thích được ý nghĩa; GV chấp nhận các ví dụ khác nhau nếu đúng bản chất. ${base}`;
+  return `Câu trả lời dự kiến: HS nhắc lại đúng 2–3 ý chính của bài. Bài tập về nhà: hoàn thành bài tập còn lại trong sách; GV kiểm tra vào đầu tiết sau. ${base}`;
+}
+function detailFor(name, title, subject, grade) {
+  const who = `${subject}${grade ? ' — ' + grade : ''}`;
+  if (name === 'Khởi động') return {
+    teacher: `Giáo viên tổ chức trò chơi / câu hỏi khởi động gắn với bài “${title}” (${who}), nêu luật chơi, đặt câu hỏi gợi mở, khích lệ HS trả lời.`,
+    student: `Học sinh tham gia trò chơi, trả lời câu hỏi khởi động, nêu dự đoán về nội dung bài mới.`,
+    steps: ['GV nêu luật chơi và câu hỏi khởi động.', 'HS chơi / trả lời, GV khích lệ và dẫn dắt vào bài mới.', 'GV chốt vấn đề, giới thiệu tên bài.'],
+  };
+  if (name.startsWith('Kiểm tra')) return {
+    teacher: `Giáo viên gọi 2–3 HS nhắc lại kiến thức bài trước, đặt câu hỏi kiểm tra, nhận xét và sửa sai ngay, kết nối sang bài “${title}”.`,
+    student: `Học sinh trả lời câu hỏi kiểm tra, nhận xét câu trả lời của bạn, nêu chỗ còn chưa rõ.`,
+    steps: ['GV đặt câu hỏi kiểm tra bài cũ.', 'HS trả lời, bạn nhận xét, GV sửa sai và chốt kiến thức.', 'GV kết nối kiến thức cũ sang bài mới.'],
+  };
+  if (name.startsWith('Hình thành')) return {
+    teacher: `Giáo viên nêu tình huống / ví dụ, đặt câu hỏi dẫn dắt từng bước, cho HS quan sát tranh / đồ dùng / ví dụ, chốt kiến thức trọng tâm của bài “${title}” và viết bảng.`,
+    student: `Học sinh quan sát, thảo luận nhóm, trả lời câu hỏi dẫn dắt, rút ra kiến thức mới và nhắc lại ý chính.`,
+    steps: ['GV nêu tình huống, HS quan sát và dự đoán.', 'HS thảo luận nhóm, trả lời câu hỏi dẫn dắt.', 'GV chốt kiến thức, HS nhắc lại và ghi nhớ.'],
+  };
+  if (name.startsWith('Luyện tập')) return {
+    teacher: `Giáo viên giao bài tập cụ thể: Bài tập 1 (cơ bản, tất cả HS làm), Bài tập 2 (vận dụng, HS khá làm thêm), hướng dẫn từng bước cho HS cần hỗ trợ, chữa bài và công bố đáp án. Phân hóa: HS cần hỗ trợ làm bài cơ bản có gợi ý từng bước; HS khá/giỏi làm thêm bài vận dụng nâng cao.`,
+    student: `Học sinh làm Bài tập 1 vào vở, HS khá làm thêm Bài tập 2, trình bày cách làm, đối chiếu đáp án và sửa bài của mình.`,
+    steps: ['GV giao Bài tập 1 (cơ bản) và Bài tập 2 (vận dụng), nêu yêu cầu rõ ràng.', 'HS làm bài cá nhân / theo cặp, GV đi hỗ trợ từng bàn.', 'HS trình bày cách làm, GV chữa bài, công bố đáp án và chốt cách làm đúng.'],
+  };
+  if (name.startsWith('Vận dụng')) return {
+    teacher: `Giáo viên nêu tình huống thực tế gần gũi với bài “${title}”, giao nhiệm vụ vận dụng theo nhóm, hướng dẫn HS liên hệ cuộc sống và trình bày sản phẩm.`,
+    student: `Học sinh thảo luận nhóm, vận dụng kiến thức vào tình huống thực tế, trình bày sản phẩm và nhận xét sản phẩm của nhóm bạn.`,
+    steps: ['GV nêu tình huống thực tế, giao nhiệm vụ nhóm.', 'HS thảo luận, làm sản phẩm vận dụng.', 'Các nhóm trình bày, GV nhận xét và liên hệ thực tế.'],
+  };
+  return {
+    teacher: `Giáo viên cho HS nhắc lại kiến thức trọng tâm bài “${title}”, nhận xét tiết học, giao bài tập về nhà và dặn dò chuẩn bị bài sau.`,
+    student: `Học sinh nhắc lại ý chính của bài, ghi bài tập về nhà, nêu điều còn thắc mắc (nếu có).`,
+    steps: ['HS nhắc lại 2–3 ý chính của bài.', 'GV nhận xét tiết học, giao bài tập về nhà.', 'HS ghi bài tập về nhà và chuẩn bị bài sau.'],
+  };
 }
 function generatePlan(input, profile) {
   const level = input.level || profile.level || 'Tiểu học';
@@ -164,13 +207,17 @@ function generatePlan(input, profile) {
     ? 'Theo Chương trình Giáo dục mầm non.'
     : 'Theo khung CV 5512 và Chương trình GDPT 2018.';
   const refNote = `GỢI Ý THAM KHẢO — Giáo viên đối chiếu Sách giáo viên bộ “${textbook}” trước khi dùng. Đây KHÔNG phải kho “yêu cầu cần đạt” chính thức theo từng bộ sách/môn/lớp/bài.`;
-  const acts = scaleActivities(lessonMinutes).map(([duration, name]) => ({
-    name, duration,
-    teacher: `Giáo viên tổ chức hoạt động “${name}” cho bài “${title}” (${subject}${grade ? ' — ' + grade : ''}), hướng dẫn, quan sát và hỗ trợ kịp thời.`,
-    student: `Học sinh tham gia hoạt động “${name}”, trao đổi nhóm, trình bày và nhận xét sản phẩm của bạn.`,
-    // steps có phút riêng chỉ để minh họa chi tiết; tổng điểm CHỈ tính duration chính, không cộng steps.
-    steps: [{ text: 'Giáo viên nêu nhiệm vụ, học sinh tiếp nhận nhiệm vụ.', minutes: 2 }, { text: 'Học sinh thực hiện, giáo viên hỗ trợ.', minutes: duration - 2 }],
-  }));
+  const acts = scaleActivities(lessonMinutes).map(([duration, name]) => {
+    const d = detailFor(name, title, subject, grade);
+    return {
+      name, duration,
+      teacher: d.teacher,
+      student: d.student,
+      expected: expectedFor(name, title, subject),
+      // steps có phút riêng chỉ để minh họa chi tiết; tổng điểm CHỈ tính duration chính, không cộng steps.
+      steps: d.steps.map((text, i) => ({ text, minutes: Math.max(1, Math.round(duration / d.steps.length)) })),
+    };
+  });
   const support = profile.supportCount ? ` Lớp có ${profile.classSize || ''} học sinh, trong đó ${profile.supportCount} em cần hỗ trợ thêm.` : '';
   const sections = {
     muc_tieu: `${refNote}\n- Học sinh nhận biết và trình bày được nội dung trọng tâm của bài “${title}”.\n- Học sinh thực hiện được các nhiệm vụ học tập của bài và vận dụng được kiến thức vào tình huống quen thuộc.\n- Học sinh hợp tác, chia sẻ và tôn trọng ý kiến của bạn trong quá trình học.`,
@@ -180,7 +227,7 @@ function generatePlan(input, profile) {
     hinh_thanh: `Giáo viên giới thiệu tình huống, đặt câu hỏi dẫn dắt; học sinh quan sát, thảo luận và rút ra kiến thức mới của bài “${title}”. Giáo viên chốt kiến thức trọng tâm, học sinh nhắc lại và ghi nhớ.`,
     luyen_tap: `Học sinh luyện tập, thực hành theo nhiệm vụ của bài. Phân hóa: học sinh cần hỗ trợ làm bài cơ bản có gợi ý từng bước; học sinh khá/giỏi làm thêm bài vận dụng nâng cao.${support}`,
     van_dung: `Học sinh vận dụng kiến thức bài “${title}” vào tình huống thực tế gần gũi, chia sẻ sản phẩm và liên hệ với cuộc sống hằng ngày.`,
-    tien_trinh: `Tiến trình gồm 4 hoạt động chính với tổng thời lượng ${lessonMinutes} phút (chỉ tính thời lượng chính từng hoạt động, không cộng dồn phút bước con): ${acts.map((a) => `${a.name} (${a.duration} phút)`).join('; ')}. ${frameworkNote}`,
+    tien_trinh: `Tiến trình gồm 6 hoạt động chính với tổng thời lượng ${lessonMinutes} phút (chỉ tính thời lượng chính từng hoạt động, không cộng dồn phút bước con): ${acts.map((a) => `${a.name} (${a.duration} phút)`).join('; ')}. ${frameworkNote}`,
     danh_gia: `Tiêu chí đánh giá: (1) Đạt — học sinh trình bày đúng nội dung trọng tâm và hoàn thành nhiệm vụ; (2) Chưa đạt — học sinh cần hỗ trợ thêm và làm lại nhiệm vụ cơ bản. Cách đánh giá: quan sát, hỏi đáp, sản phẩm học tập và nhận xét của bạn.`,
     rut_kinh_nghiem: `Sau tiết dạy, giáo viên ghi lại: nội dung nào học sinh tiếp thu tốt, nội dung nào cần điều chỉnh, và cách điều chỉnh cho lần dạy sau.`,
   };
@@ -226,16 +273,20 @@ function extractConventions(sample) {
   return { sectionOrder: order.map((o) => o.key), fixedTerms, signatureBlock: sigLines.slice(-4).join('\n') };
 }
 function renderDoc(plan) {
-  const rows = (plan.activities || []).map((a) => `<tr><td>${escapeHtml(a.name)} (${a.duration} phút)</td><td>${escapeHtml(a.teacher || '')}</td><td>${escapeHtml(a.student || '')}</td></tr>`).join('');
+  // Bảng vẫn 3 cột chuẩn 5512; thời gian nằm cùng tên hoạt động, đáp án dự kiến nằm trong ô HS.
+  const rows = (plan.activities || []).map((a) => `<tr><td>${escapeHtml(a.name)} (${a.duration} phút)</td><td>${escapeHtml(a.teacher || '')}</td><td>${escapeHtml(a.student || '')}${a.expected ? `<br><i>Câu trả lời / đáp án dự kiến: ${escapeHtml(a.expected)}</i>` : ''}</td></tr>`).join('');
+  const detail = (plan.activities || []).map((a) => `<h4>${escapeHtml(a.name)} (${a.duration} phút)</h4><p>Các bước: ${(a.steps || []).map((s) => escapeHtml(s.text || s)).join(' ')}</p>${a.expected ? `<p><i>Câu trả lời / đáp án dự kiến: ${escapeHtml(a.expected)}</i></p>` : ''}`).join('');
   const secs = SECTIONS.map((s) => `<h3>${escapeHtml(s.label)}</h3><p>${escapeHtml(plan.sections?.[s.key] || '').replace(/\n/g, '<br>')}</p>`).join('');
   const badge = plan.reviewState === 'approved' ? '<p><b>Tổ đã duyệt ✓</b></p>' : '';
-  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman",serif;font-size:13pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:6px;vertical-align:top}</style></head><body><h2 style="text-align:center">GIÁO ÁN</h2><p>Trường: ${escapeHtml(plan.authorSchool || '')} — Giáo viên: ${escapeHtml(plan.authorName || '')}</p><p>Môn: ${escapeHtml(plan.subject || '')} — Lớp: ${escapeHtml(plan.grade || '')} — Bài: ${escapeHtml(plan.title || '')} — Bộ sách: ${escapeHtml(plan.textbook || '')} — Thời lượng: ${plan.lessonMinutes} phút — Điểm tự chấm: ${plan.score}/100</p>${badge}<h3>Tiến trình dạy học (bảng 3 cột)</h3><table><tr><th>Hoạt động</th><th>Hoạt động của giáo viên</th><th>Hoạt động của học sinh</th></tr>${rows}</table>${secs}</body></html>`;
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman",serif;font-size:13pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:6px;vertical-align:top}</style></head><body><h2 style="text-align:center">GIÁO ÁN</h2><p>Trường: ${escapeHtml(plan.authorSchool || '')} — Giáo viên: ${escapeHtml(plan.authorName || '')}</p><p>Môn: ${escapeHtml(plan.subject || '')} — Lớp: ${escapeHtml(plan.grade || '')} — Bài: ${escapeHtml(plan.title || '')} — Bộ sách: ${escapeHtml(plan.textbook || '')} — Thời lượng: ${plan.lessonMinutes} phút — Điểm tự chấm: ${plan.score}/100</p>${badge}<h3>Tiến trình dạy học (bảng 3 cột)</h3><table><tr><th>Hoạt động</th><th>Hoạt động của giáo viên</th><th>Hoạt động của học sinh</th></tr>${rows}</table><h3>Chi tiết từng hoạt động (bước, bài tập, đáp án dự kiến)</h3>${detail}${secs}</body></html>`;
 }
 function renderTxt(plan) {
   const lines = [`GIÁO ÁN — ${plan.title}`, `Trường: ${plan.authorSchool} — Giáo viên: ${plan.authorName}`, `Môn: ${plan.subject} — Lớp: ${plan.grade} — Bộ sách: ${plan.textbook} — ${plan.lessonMinutes} phút — Điểm tự chấm: ${plan.score}/100`, ''];
   if (plan.reviewState === 'approved') lines.push('Tổ đã duyệt ✓', '');
   lines.push('TIẾN TRÌNH (bảng 3 cột: Hoạt động | Giáo viên | Học sinh)');
-  (plan.activities || []).forEach((a) => lines.push(`- ${a.name} (${a.duration} phút) | ${a.teacher} | ${a.student}`));
+  (plan.activities || []).forEach((a) => lines.push(`- ${a.name} (${a.duration} phút) | ${a.teacher} | ${a.student}${a.expected ? ` | Câu trả lời / đáp án dự kiến: ${a.expected}` : ''}`));
+  lines.push('CHI TIẾT TỪNG HOẠT ĐỘNG');
+  (plan.activities || []).forEach((a) => { lines.push(`* ${a.name} (${a.duration} phút)`); (a.steps || []).forEach((s) => lines.push(`  - ${s.text || s}`)); if (a.expected) lines.push(`  Câu trả lời / đáp án dự kiến: ${a.expected}`); });
   lines.push('');
   SECTIONS.forEach((s) => { lines.push(s.label); lines.push(plan.sections?.[s.key] || ''); lines.push(''); });
   return lines.join('\n');

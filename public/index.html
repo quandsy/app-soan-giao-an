@@ -176,12 +176,14 @@ function renderPlan(){
   if(!currentPlan)return;
   const p=currentPlan;
   const badge=p.reviewState==='approved'?'<span class="badge">Tổ đã duyệt ✓</span>':'';
-  const acts=(p.activities||[]).map((a,i)=>`<tr><td>${esc(a.name)}</td><td><input value="${a.duration}" type="number" onchange="editAct(${i},'duration',this.value)"></td><td>${esc(a.teacher)}</td><td>${esc(a.student)}</td></tr>`).join('');
+  const acts=(p.activities||[]).map((a,i)=>`<tr><td>${esc(a.name)} (<input value="${a.duration}" type="number" style="width:64px" onchange="editAct(${i},'duration',this.value)"> phút)</td><td>${esc(a.teacher)}</td><td>${esc(a.student)}${a.expected?`<br><i>Câu trả lời / đáp án dự kiến: ${esc(a.expected)}</i>`:''}</td></tr>`).join('');
+  const actDetail=(p.activities||[]).map((a,i)=>`<div><label>${esc(a.name)} — Các bước chi tiết</label><p class="muted">${(a.steps||[]).map(s=>esc(s.text||s)).join(' ')}</p><label>Câu trả lời / đáp án dự kiến của HS (sửa được)</label><textarea onchange="editAct(${i},'expected',this.value)">${esc(a.expected||'')}</textarea></div>`).join('');
   const secs=SECTIONS.map(([k,l])=>`<label>${l}</label><textarea id="sec-${k}">${esc(p.sections?.[k]||'')}</textarea><p><select id="mode-${k}"><option value="shorten">Rút gọn</option><option value="detail">Chi tiết hơn</option><option value="game">Thêm trò chơi</option><option value="split">Tách GV–HS</option></select> <button class="secondary" onclick="rewriteSec('${k}')">Áp dụng gợi ý</button></p>`).join('');
   const issues=(p.issues||[]).map(i=>`<li>${esc(i.message)} — <i>${esc(i.suggestion)}</i></li>`).join('')||'<li>Không có vấn đề cần sửa.</li>';
   $('planResult').innerHTML=`<div class="card"><h3>${esc(p.title)} ${badge}</h3><p class="muted">${esc(p.level)} — ${esc(p.subject)} — ${esc(p.grade)} — Bộ ${esc(p.textbook)} — ${p.lessonMinutes} phút — Tổng hoạt động: ${p.totalMinutes} phút (chỉ tính thời lượng chính, không cộng phút bước con)</p>
   <p><b>Điểm tự chấm: ${p.score}/100</b></p><ul>${issues}</ul>
-  <table><tr><th>Hoạt động</th><th>Phút</th><th>Giáo viên</th><th>Học sinh</th></tr>${acts}</table>
+  <table><tr><th>Hoạt động</th><th>Hoạt động của giáo viên</th><th>Hoạt động của học sinh</th></tr>${acts}</table>
+  <h4>Chi tiết từng hoạt động (bước, bài tập, đáp án dự kiến)</h4>${actDetail}
   ${secs}
   <p><button class="primary" onclick="savePlan()">Lưu thay đổi</button>
   <button class="secondary" onclick="printPlan()">Xem bản in A4</button>
