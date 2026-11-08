@@ -57,6 +57,9 @@ table{width:100%;border-collapse:collapse} td,th{border:1px solid #e5e7eb;paddin
 <div><label>Thời lượng tiết (phút)</label><input id="f-minutes" type="number" value="35"></div>
 <div><label>Tuần (tùy chọn)</label><input id="f-week" placeholder="VD: Tuần 5"></div>
 <div><label>Số tiết</label><input id="f-periods" type="number" value="1"></div>
+<div><label>Ngày soạn</label><input id="f-ngaysoan" type="date"></div>
+<div><label>Ngày giảng</label><input id="f-ngaygiang" placeholder="VD: 9A1 15/9/2026"></div>
+<div><label>Tiết</label><input id="f-tiet" placeholder="VD: Tiết 4, 5"></div>
 </div>
 <p style="margin-top:12px"><button class="primary" onclick="createPlan()">Soạn giáo án</button>
 <button class="secondary" onclick="showBatch()">Soạn hàng loạt</button></p>
@@ -152,7 +155,7 @@ table{width:100%;border-collapse:collapse} td,th{border:1px solid #e5e7eb;paddin
 
 <script>
 const TABS=[['soan','Soạn giáo án'],['thuvien','Thư viện'],['congdong','Cộng đồng'],['to','Tổ chuyên môn'],['thongke','Thống kê & Gói'],['hoso','Hồ sơ'],['dangky','Đăng ký bản đầy đủ']];
-const SECTIONS=[['muc_tieu','1. Yêu cầu cần đạt'],['pham_chat_nang_luc','2. Phẩm chất và năng lực'],['thiet_bi','3. Thiết bị dạy học và học liệu'],['khoi_dong','4. Hoạt động khởi động'],['hinh_thanh','5. Hoạt động hình thành kiến thức mới'],['luyen_tap','6. Hoạt động luyện tập, thực hành'],['van_dung','7. Hoạt động vận dụng, trải nghiệm'],['tien_trinh','8. Tiến trình dạy học'],['danh_gia','9. Đánh giá và tiêu chí'],['rut_kinh_nghiem','10. Điều chỉnh và rút kinh nghiệm']];
+const SECTIONS=[['muc_tieu','I. MỤC TIÊU'],['thiet_bi','II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU'],['tien_trinh','III. TIẾN TRÌNH DẠY HỌC'],['danh_gia','IV. ĐÁNH GIÁ'],['rut_kinh_nghiem','V. RÚT KINH NGHIỆM SAU TIẾT DẠY']];
 let me={}, profile={}, currentPlan=null, pendingPlan=null, myOrgs=[];
 const $=id=>document.getElementById(id);
 function showTab(key){TABS.forEach(([k])=>{$( 'tab-'+k).classList.toggle('hidden',k!==key)});document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===key));if(key==='thuvien')loadLibrary();if(key==='congdong')loadCommunity();if(key==='to')loadOrgs();if(key==='thongke')loadStats();if(key==='hoso')loadProfile();if(key==='dangky')loadLeads();}
@@ -160,8 +163,9 @@ document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>`<button data-tab="$
 async function api(path,method='GET',body){const r=await fetch(path,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const t=await r.text();let j={};try{j=JSON.parse(t)}catch(e){}if(!r.ok)throw j;return j;}
 async function refreshMe(){me=await api('/api/me');$('banner').innerHTML=me.registered?`<b>Đã đăng ký bản đầy đủ.</b> Bạn soạn không giới hạn.`:`<b>Bạn đã soạn ${me.planCount}/3 giáo án miễn phí — còn ${me.remaining} giáo án miễn phí.</b> Soạn đến giáo án thứ 4, app sẽ hỏi họ tên, số điện thoại và email để mở tiếp.`;}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function headerFields(){const ns=$('f-ngaysoan').value;return {ngaySoan:ns?ns.split('-').reverse().join('/'):'',ngayGiang:$('f-ngaygiang').value,tiet:$('f-tiet').value};}
 async function createPlan(){
-  const payload={level:$('f-level').value,subject:$('f-subject').value,grade:$('f-grade').value,title:$('f-title').value,textbook:$('f-textbook').value,lessonMinutes:Number($('f-minutes').value)||35,week:$('f-week').value,periods:Number($('f-periods').value)||1};
+  const payload={level:$('f-level').value,subject:$('f-subject').value,grade:$('f-grade').value,title:$('f-title').value,textbook:$('f-textbook').value,lessonMinutes:Number($('f-minutes').value)||35,week:$('f-week').value,periods:Number($('f-periods').value)||1,...headerFields()};
   if(!payload.title){alert('Vui lòng nhập tên bài.');return;}
   try{currentPlan=await api('/api/plans','POST',payload);pendingPlan=null;renderPlan();refreshMe();}
   catch(e){if(e.error==='NEEDS_REGISTRATION'){pendingPlan=payload;$('registerModal').classList.remove('hidden');}else alert(e.message||e.error||'Không tạo được giáo án.');}
@@ -178,10 +182,18 @@ function renderPlan(){
   const badge=p.reviewState==='approved'?'<span class="badge">Tổ đã duyệt ✓</span>':'';
   // Thời gian đính liền ngay tên hoạt động, KHÔNG tách thành cột riêng; muốn sửa phút thì sửa ở phần chi tiết bên dưới.
   const acts=(p.activities||[]).map((a,i)=>`<tr><td>${esc(a.name)} (${a.duration} phút)</td><td>${esc(a.teacher)}</td><td>${esc(a.student)}${a.expected?`<br><i>Câu trả lời / đáp án dự kiến: ${esc(a.expected)}</i>`:''}</td></tr>`).join('');
-  const actDetail=(p.activities||[]).map((a,i)=>`<div><label>${esc(a.name)} (${a.duration} phút) — Sửa thời lượng (phút)</label><input value="${a.duration}" type="number" onchange="editAct(${i},'duration',this.value)"><label>Các bước chi tiết</label><p class="muted">${(a.steps||[]).map(s=>esc(s.text||s)).join(' ')}</p><label>Lời nói / hoạt động của giáo viên (sửa được)</label><textarea onchange="editAct(${i},'teacher',this.value)">${esc(a.teacher||'')}</textarea><label>Câu trả lời / đáp án dự kiến của HS (sửa được)</label><textarea onchange="editAct(${i},'expected',this.value)">${esc(a.expected||'')}</textarea></div>`).join('');
+  // Chi tiết từng hoạt động theo đúng mẫu giáo án: a. Mục tiêu — b. Tổ chức thực hiện
+  // (4 bước: Chuyển giao nhiệm vụ / Thực hiện nhiệm vụ / Báo cáo, thảo luận / Kết luận, nhận định)
+  // — Sản phẩm dự kiến. Hình thành kiến thức hiển thị bảng 2 cột như trong mẫu.
+  const phasesHtml=(a)=>((a.phases||[]).length?(a.phases||[]).map(ph=>`<p><b>- ${esc(ph.label)}:</b> ${esc(ph.text||'')}</p>`).join(''):`<p class="muted">${(a.steps||[]).map(s=>esc(s.text||s)).join(' ')}</p>`);
+  const actDetail=(p.activities||[]).map((a,i)=>{
+    const twoCol=(a.name||'').startsWith('Hình thành');
+    const body=twoCol?`<table><tr><th>Hoạt động của thầy và trò</th><th>Sản phẩm dự kiến</th></tr><tr><td>${phasesHtml(a)}</td><td>${esc(a.product||'')}</td></tr></table>`:`${phasesHtml(a)}<label>Sản phẩm dự kiến (sửa được)</label><textarea onchange="editAct(${i},'product',this.value)">${esc(a.product||'')}</textarea>`;
+    return `<div><h4>HOẠT ĐỘNG ${i+1}: ${esc(a.name)} (${a.duration} phút)</h4><label>Sửa thời lượng (phút)</label><input value="${a.duration}" type="number" onchange="editAct(${i},'duration',this.value)"><label>a. Mục tiêu (sửa được)</label><textarea onchange="editAct(${i},'goal',this.value)">${esc(a.goal||'')}</textarea><label>b. Tổ chức thực hiện</label>${body}<label>Lời nói / hoạt động của giáo viên (sửa được)</label><textarea onchange="editAct(${i},'teacher',this.value)">${esc(a.teacher||'')}</textarea><label>Câu trả lời / đáp án dự kiến của HS (sửa được)</label><textarea onchange="editAct(${i},'expected',this.value)">${esc(a.expected||'')}</textarea></div>`;
+  }).join('');
   const secs=SECTIONS.map(([k,l])=>`<label>${l}</label><textarea id="sec-${k}">${esc(p.sections?.[k]||'')}</textarea><p><select id="mode-${k}"><option value="shorten">Rút gọn</option><option value="detail">Chi tiết hơn</option><option value="game">Thêm trò chơi</option><option value="split">Tách GV–HS</option></select> <button class="secondary" onclick="rewriteSec('${k}')">Áp dụng gợi ý</button></p>`).join('');
   const issues=(p.issues||[]).map(i=>`<li>${esc(i.message)} — <i>${esc(i.suggestion)}</i></li>`).join('')||'<li>Không có vấn đề cần sửa.</li>';
-  $('planResult').innerHTML=`<div class="card"><h3>${esc(p.title)} ${badge}</h3><p class="muted">${esc(p.level)} — ${esc(p.subject)} — ${esc(p.grade)} — Bộ ${esc(p.textbook)} — ${p.lessonMinutes} phút — Tổng hoạt động: ${p.totalMinutes} phút (chỉ tính thời lượng chính, không cộng phút bước con)</p>
+  $('planResult').innerHTML=`<div class="card"><h3>${esc(p.title)} ${badge}</h3><p class="muted">Ngày soạn: ${esc(p.ngaySoan||'')} — Ngày giảng: ${esc(p.ngayGiang||'')} — Tiết: ${esc(p.tiet||'')}</p><p class="muted">${esc(p.level)} — ${esc(p.subject)} — ${esc(p.grade)} — Bộ ${esc(p.textbook)} — ${p.lessonMinutes} phút — Tổng hoạt động: ${p.totalMinutes} phút (chỉ tính thời lượng chính, không cộng phút bước con)</p>
   <p><b>Điểm tự chấm: ${p.score}/100</b></p><ul>${issues}</ul>
   <table><tr><th>Hoạt động</th><th>Hoạt động của giáo viên</th><th>Hoạt động của học sinh</th></tr>${acts}</table>
   <h4>Chi tiết từng hoạt động (bước, bài tập, đáp án dự kiến)</h4>${actDetail}
@@ -206,7 +218,7 @@ async function duplicatePlan(){currentPlan=await api('/api/plans/'+currentPlan.i
 async function submitReview(){await loadOrgs();const orgId=prompt('Nhập ID tổ (xem ở tab Tổ chuyên môn):');if(!orgId)return;currentPlan=await api('/api/plans/'+currentPlan.id+'/submit','POST',{orgId});renderPlan();alert('Đã nộp duyệt.');}
 function showBatch(){$('batchBox').classList.toggle('hidden');}
 async function createBatch(){
-  try{const r=await api('/api/plans/batch','POST',{lines:$('batchLines').value,level:$('f-level').value,subject:$('f-subject').value,grade:$('f-grade').value,textbook:$('f-textbook').value,lessonMinutes:Number($('f-minutes').value)||35});
+  try{const r=await api('/api/plans/batch','POST',{lines:$('batchLines').value,level:$('f-level').value,subject:$('f-subject').value,grade:$('f-grade').value,textbook:$('f-textbook').value,lessonMinutes:Number($('f-minutes').value)||35,...headerFields()});
   $('batchResult').innerHTML=`<p>Đã tạo ${r.created.length} giáo án.</p>`+(r.errors.length?`<p>Lỗi: ${r.errors.map(e=>esc(e.lesson)+': '+esc(e.error)).join('<br>')}</p>`:'');refreshMe();loadLibrary();}
   catch(e){if(e.error==='NEEDS_REGISTRATION'){alert(e.message);}else alert(e.message||'Soạn hàng loạt chưa thành công.');}
 }
@@ -234,6 +246,7 @@ function exportLeads(){window.location='/api/leads/export';}
 async function loadLeads(){try{const q=$('lead-q').value,st=$('lead-status').value;const list=await api(`/api/leads?q=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}`);$('leadList').innerHTML=list.length?list.map(l=>`<div class="card"><b>${esc(l.name)}</b> ${l.isHot?'<span class="badge">Khách nóng</span>':''}<p class="muted">Giáo án lúc đăng ký: ${l.plansCreatedAtRegistration} — Trạng thái: ${l.status} — ${esc(l.level)} ${esc(l.subject)}</p><p><select onchange="setLeadStatus('${l.id}',this.value)"><option ${l.status==='Chưa liên hệ'?'selected':''}>Chưa liên hệ</option><option ${l.status==='Đã liên hệ'?'selected':''}>Đã liên hệ</option><option ${l.status==='Đã dùng bản đầy đủ'?'selected':''}>Đã dùng bản đầy đủ</option></select></p></div>`).join(''):'<p class="muted">Chưa có lead nào.</p>';}catch(e){$('leadList').innerHTML='<p class="muted">Cần đăng nhập quản trị để xem lead (nếu máy chủ đã đặt ADMIN_PASSWORD).</p>';}}
 async function setLeadStatus(id,status){await api('/api/leads/'+id,'PATCH',{status});loadLeads();}
 refreshMe();loadProfile();showTab('soan');
+(function(){const d=new Date(Date.now()+7*3600*1000);const el=document.getElementById('f-ngaysoan');if(el&&!el.value)el.value=d.toISOString().slice(0,10);})();
 </script>
 </body>
 </html>

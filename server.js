@@ -102,17 +102,17 @@ function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e 
 function isValidVnPhone(p) { return /^0\d{9}$/.test(String(p || '').trim()); }
 
 // ---------- Sections / scoring / generation ----------
+// Cấu trúc mục theo đúng mẫu giáo án sếp gửi 08/11/2026 (LS&ĐL 9 KNTT, Bài 3):
+// I. MỤC TIÊU (1. Về kiến thức — 2. Về năng lực: chung + đặc thù môn — 3. Về phẩm chất)
+// II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU (1. Giáo viên — 2. Học sinh)
+// III. TIẾN TRÌNH DẠY HỌC (chi tiết từng hoạt động, xem plan.activities)
+// IV. ĐÁNH GIÁ — V. RÚT KINH NGHIỆM (giữ thêm theo CV 5512).
 const SECTIONS = [
-  { key: 'muc_tieu', label: '1. Yêu cầu cần đạt (Mục tiêu)' },
-  { key: 'pham_chat_nang_luc', label: '2. Phẩm chất và năng lực cần hình thành' },
-  { key: 'thiet_bi', label: '3. Thiết bị dạy học và học liệu' },
-  { key: 'khoi_dong', label: '4. Hoạt động khởi động' },
-  { key: 'hinh_thanh', label: '5. Hoạt động hình thành kiến thức mới' },
-  { key: 'luyen_tap', label: '6. Hoạt động luyện tập, thực hành' },
-  { key: 'van_dung', label: '7. Hoạt động vận dụng, trải nghiệm' },
-  { key: 'tien_trinh', label: '8. Tiến trình dạy học (tổng hợp)' },
-  { key: 'danh_gia', label: '9. Đánh giá và tiêu chí đánh giá' },
-  { key: 'rut_kinh_nghiem', label: '10. Điều chỉnh và rút kinh nghiệm sau tiết dạy' },
+  { key: 'muc_tieu', label: 'I. MỤC TIÊU' },
+  { key: 'thiet_bi', label: 'II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU' },
+  { key: 'tien_trinh', label: 'III. TIẾN TRÌNH DẠY HỌC' },
+  { key: 'danh_gia', label: 'IV. ĐÁNH GIÁ' },
+  { key: 'rut_kinh_nghiem', label: 'V. RÚT KINH NGHIỆM SAU TIẾT DẠY' },
 ];
 const SECTION_KEYS = SECTIONS.map((s) => s.key);
 const MEASURABLE_VERBS = ['nhận biết', 'phân biệt', 'thực hiện', 'tính', 'giải', 'trình bày', 'vận dụng', 'so sánh', 'mô tả', 'kể', 'đọc', 'viết', 'đo', 'vẽ', 'làm được', 'nêu được', 'chỉ ra'];
@@ -126,7 +126,7 @@ function scorePlan(plan) {
   let score = 0;
   const filled = SECTION_KEYS.filter((k) => String(plan.sections?.[k] || '').trim()).length;
   score += Math.round((filled / SECTION_KEYS.length) * 40);
-  if (filled < SECTION_KEYS.length) issues.push({ code: 'incomplete', message: `Mới đủ ${filled}/10 mục theo khung 5512.`, suggestion: 'Bổ sung các mục còn trống, đặc biệt là mục tiêu, tiến trình và đánh giá.' });
+  if (filled < SECTION_KEYS.length) issues.push({ code: 'incomplete', message: `Mới đủ ${filled}/5 mục theo mẫu giáo án (I. Mục tiêu — II. Thiết bị — III. Tiến trình — IV. Đánh giá — V. Rút kinh nghiệm).`, suggestion: 'Bổ sung các mục còn trống, đặc biệt là mục tiêu, tiến trình và đánh giá.' });
   const mt = String(plan.sections?.muc_tieu || '').toLowerCase();
   const verbs = MEASURABLE_VERBS.filter((v) => mt.includes(v));
   if (verbs.length >= 2) score += 20;
@@ -165,34 +165,99 @@ function expectedFor(name, title, subject) {
   if (name.startsWith('Vận dụng')) return `Câu trả lời dự kiến (mở): HS giải quyết đúng tình huống cụ thể GV nêu, đưa ra được cách làm và giải thích được vì sao làm như vậy; GV chấp nhận các cách giải quyết khác nhau nếu đúng bản chất. ${base}`;
   return `Câu trả lời dự kiến: HS tham gia trò chơi cả lớp, qua trò chơi nhắc lại đúng 2–3 ý chính của bài. Bài tập về nhà: hoàn thành bài tập còn lại trong SGK; GV xem lại bài của HS vào đầu tiết sau. ${base}`;
 }
+// 5 câu trắc nghiệm mẫu cho hoạt động Luyện tập (theo mẫu: trò chơi “Vòng quay may mắn”).
+// Câu hỏi hỏi về mục đích / cách học / vận dụng của bài (không bịa sự kiện, số liệu trong SGK);
+// đáp án đúng là đáp án phù hợp với nội dung bài đã soạn. GV thay bằng 5 câu hỏi nội
+// dung thật trong SGK và đối chiếu đáp án theo SGV trước khi dạy.
+function quizFor(T) {
+  const qs = [
+    { stem: `Nội dung trọng tâm của bài “${T}” là gì?`, opts: ['Những nét chính của bài và cách vận dụng vào thực tế.', 'Chỉ học thuộc tên bài.', 'Chỉ chép lại nội dung trong SGK.', 'Chỉ làm bài tập về nhà.'], correct: 0 },
+    { stem: `Khi học bài “${T}”, học sinh cần làm gì trước tiên?`, opts: ['Học thuộc lòng cả bài.', 'Làm bài tập khó nhất trước.', 'Quan sát tình huống trong SGK và trả lời câu hỏi dẫn dắt.', 'Chép bài của bạn.'], correct: 2 },
+    { stem: `Kiến thức bài “${T}” giúp ích gì trong cuộc sống?`, opts: ['Chỉ để làm bài tập trên lớp.', 'Vận dụng để giải quyết tình huống thực tế.', 'Không dùng được ngoài lớp học.', 'Chỉ để thi.'], correct: 1 },
+    { stem: 'Trong giờ học, khi bạn trả lời chưa đúng, em nên làm gì?', opts: ['Lắng nghe, nhận xét và bổ sung giúp bạn.', 'Cười bạn.', 'Im lặng, không quan tâm.', 'Nói bạn sai rồi, không cần nghe nữa.'], correct: 0 },
+    { stem: `Sau bài học “${T}”, em cần làm gì ở nhà?`, opts: ['Không cần làm gì thêm.', 'Chỉ chơi, không ôn bài.', 'Học thuộc lòng bài sau.', 'Hoàn thành bài tập còn lại trong SGK và đọc trước bài sau.'], correct: 3 },
+  ];
+  const letters = ['A', 'B', 'C', 'D'];
+  const text = qs.map((q, i) => `Câu ${i + 1}: ${q.stem}\n${q.opts.map((o, j) => `${letters[j]}. ${o}`).join('\n')}`).join('\n');
+  const key = 'Đáp án: ' + qs.map((q, i) => `${i + 1}. ${letters[q.correct]}`).join(', ');
+  return { text, key };
+}
+// Mỗi hoạt động theo đúng mẫu giáo án sếp gửi 08/11/2026:
+// a. Mục tiêu — b. Tổ chức thực hiện gồm 4 bước: Chuyển giao nhiệm vụ / Thực hiện nhiệm vụ /
+// Báo cáo, thảo luận / Kết luận, nhận định (GV) — và Sản phẩm dự kiến.
+// (teacher/student/steps giữ nguyên để bảng tổng hợp 3 cột trong app vẫn dùng được.)
 function detailFor(name, title, subject, grade) {
   const who = `${subject}${grade ? ' — ' + grade : ''}`;
   const T = title || 'bài học';
   const pageNote = `GV điền số trang SGK thật (bộ sách đang dùng) vào chỗ “tr. ___” trước khi dạy.`;
+  const P = (label, text) => ({ label, text });
   if (name === 'Khởi động') return {
     teacher: `GV ổn định lớp rồi cho cả lớp hát một bài hát ngắn gắn với bài trước, hoặc tổ chức trò chơi “Ai nhanh hơn” gắn với kiến thức bài trước. GV nói rõ ràng: “Cả lớp cùng hát bài… nào. Hát xong, cô / thầy đố các em 3 phép tính (hoặc 3 câu hỏi) của bài trước, bạn nào biết thì giơ bảng con lên.” GV viết 2–3 phép tính / câu hỏi cụ thể của bài trước lên bảng (ví dụ với bài phép cộng: 2 + 3 = ?, 4 + 1 = ?, 5 + 2 = ? — GV thay bằng phép tính / câu hỏi thật của bài trước mà lớp vừa học), HS viết đáp án lên bảng con và giơ lên cùng lúc, GV quan sát nhanh, khen cụ thể: “Bạn trả lời rất nhanh, cả lớp vỗ tay khen bạn nào.” Nếu HS trả lời chưa đúng, GV không chê mà gợi ý: “Bạn đã gần đúng rồi, bạn nào bổ sung giúp bạn nào?” Sau đó GV dẫn dắt rõ ràng: “Các phép tính vừa rồi chính là cầu nối để hôm nay chúng ta học bài mới.” GV viết tên bài “${T}” (${who}) lên bảng, yêu cầu HS đọc tên bài và mở SGK.`,
     student: `Học sinh hát hoặc chơi trò chơi khởi động, nghe phép tính / câu hỏi cụ thể của bài trước, viết đáp án lên bảng con và giơ lên cùng lúc, nhận xét câu trả lời của bạn, đọc tên bài mới và mở SGK theo yêu cầu của GV.`,
     steps: ['GV cho cả lớp hát một bài hát ngắn hoặc chơi trò chơi “Ai nhanh hơn” gắn với kiến thức bài trước.', 'GV viết 2–3 phép tính / câu hỏi cụ thể của bài trước lên bảng, HS viết đáp án lên bảng con và giơ lên cùng lúc.', 'GV khen, gợi ý bổ sung khi HS trả lời chưa đúng, rồi viết tên bài mới lên bảng và dẫn dắt vào bài.'],
+    goal: 'Tạo tâm thế hứng thú cho học sinh đi vào tìm hiểu bài mới.',
+    phases: [
+      P('Chuyển giao nhiệm vụ', `GV cho HS quan sát tranh / hình ảnh và đọc thông tin phần Mở đầu (SGK) để trả lời câu hỏi. GV nêu câu hỏi: “Các em quan sát tranh và cho cô / thầy biết: các em thấy gì? Điều gì khiến các em thắc mắc?” Đồng thời GV viết 2–3 phép tính / câu hỏi cụ thể của bài trước lên bảng (ví dụ với bài phép cộng: 2 + 3 = ?, 4 + 1 = ?, 5 + 2 = ? — GV thay bằng phép tính / câu hỏi thật của bài trước mà lớp vừa học).`),
+      P('Thực hiện nhiệm vụ', 'GV hướng dẫn HS tham gia trò chơi / hát bài hát khởi động, trả lời câu hỏi. HS viết đáp án lên bảng con và giơ lên cùng lúc.'),
+      P('Báo cáo, thảo luận', 'HS trả lời câu hỏi (dựa vào SGK và kiến thức bài trước), các bạn nhận xét, bổ sung.'),
+      P('Kết luận, nhận định (GV)', `GV nhận xét (hoạt động của HS và sản phẩm), chốt kiến thức, chuyển dẫn vào hoạt động hình thành kiến thức mới. GV dẫn vào bài: “Từ những gì các em vừa trả lời, hôm nay chúng ta sẽ cùng tìm hiểu bài “${T}” để hiểu rõ hơn về nội dung này.”`),
+    ],
+    product: `Câu trả lời dự kiến của HS: trả lời đúng phép tính / câu hỏi cụ thể của bài trước, nêu được dự đoán về bài mới. GV dẫn vào bài: “Từ những gì các em vừa trả lời, hôm nay chúng ta sẽ cùng tìm hiểu bài “${T}”.”`,
   };
   if (name.startsWith('Hình thành')) return {
     teacher: `GV dựa vào tình huống trong SGK: “Các em mở SGK tr. ___ (tình huống mở đầu bài “${T}”), quan sát tranh và đọc thầm tình huống trong sách.” GV đọc to tình huống trong SGK, chỉ vào tranh và hỏi: “Các em thấy gì trong tranh? Tình huống này hỏi chúng ta điều gì?” GV cho HS quan sát 1–2 phút, sau đó đặt câu hỏi dẫn dắt theo từng bước, không hỏi dồn: bước 1 hỏi “Cái gì?”, bước 2 hỏi “Vì sao lại như vậy?”, bước 3 hỏi “Vậy chúng ta rút ra được điều gì?” Khi HS trả lời, GV ghi ý đúng lên bảng theo từng ý, hỏi lại: “Bạn nào có cách nói khác mà vẫn đúng ý này không?” GV chốt kiến thức bằng lời khẳng định rõ ràng: “Như vậy, kiến thức trọng tâm của bài “${T}” là…”, viết khung kiến thức lên bảng, yêu cầu HS đọc lại khung kiến thức 2 lần và ghi vào vở. Với HS còn lúng túng, GV nói riêng: “Bạn cứ nói theo ý hiểu của mình, sai cũng không sao, cô / thầy sẽ giúp bạn sửa.” ${pageNote}`,
     student: `Học sinh mở SGK đúng trang tình huống, quan sát tranh và đọc tình huống trong sách, suy nghĩ và trả lời từng câu hỏi dẫn dắt của GV, thảo luận nhóm 2–4 bạn để thống nhất ý trả lời, trình bày ý của nhóm, nhận xét ý của nhóm bạn, đọc lại khung kiến thức trên bảng và ghi vào vở.`,
     steps: ['GV cho HS mở SGK đúng trang tình huống, đọc to tình huống trong sách và hỏi “Các em thấy gì trong tranh?”.', 'HS quan sát tranh SGK, thảo luận nhóm, trả lời câu hỏi dẫn dắt theo từng bước “Cái gì? Vì sao? Rút ra điều gì?”.', 'GV chốt kiến thức, viết khung kiến thức lên bảng, HS đọc lại và ghi vào vở.'],
+    goal: `Học sinh biết được những nét chính về bài “${T}” và rút ra được kiến thức mới của bài.`,
+    phases: [
+      P('Chuyển giao nhiệm vụ', `GV yêu cầu HS nghiên cứu SGK và tư liệu đã tìm hiểu, chia nhóm (Nhóm 1 / Nhóm 2) theo từng nội dung của bài, giao nhiệm vụ rõ ràng cho từng nhóm. GV nêu câu hỏi dẫn dắt gắn với tình huống trong SGK (SGK tr. ___). ${pageNote}`),
+      P('Thực hiện nhiệm vụ', 'GV hướng dẫn HS trả lời câu hỏi dẫn dắt theo từng bước: “Cái gì? Vì sao lại như vậy? Rút ra điều gì?” HS quan sát tranh trong SGK, thảo luận nhóm, kiểm tra lại nội dung, chuẩn bị lên bảng trình bày kết quả.'),
+      P('Báo cáo, thảo luận', 'GV gọi đại diện 1 nhóm trình bày, các nhóm khác lắng nghe, nhận xét, bổ sung. HS trả lời câu hỏi của GV.'),
+      P('Kết luận, nhận định (GV)', `GV chốt bài: kiến thức trọng tâm của bài “${T}” là…; viết khung kiến thức lên bảng, yêu cầu HS đọc lại 2 lần và ghi vào vở.`),
+    ],
+    product: `Sản phẩm dự kiến (HS ghi vào vở):\n1. Những nét chính của bài “${T}” (theo tình huống trong SGK tr. ___).\n2. Kiến thức trọng tâm: HS trình bày được ý chính của bài bằng lời của mình.\n3. Ví dụ minh họa trong SGK và liên hệ thực tế.\n${pageNote}`,
   };
-  if (name.startsWith('Luyện tập')) return {
-    teacher: `GV giao từng bài tập một, không giao dồn, mỗi bài nói rõ tên bài, số trang và hình thức làm. Bài tập 1 (SGK tr. ___): “Các em mở SGK tr. ___, làm Bài tập 1. Bài này chúng ta làm bằng bảng con: nghe cô / thầy đọc đề, viết đáp án lên bảng con, giơ lên cùng lúc nhé.” GV đọc đề từng câu, HS giơ bảng con, GV quan sát nhanh cả lớp, chữa ngay câu nào nhiều bạn sai. Bài tập 2 (SGK tr. ___): “Bây giờ làm Bài tập 2, làm cá nhân vào vở. Bạn nào làm xong thì giơ tay, cô / thầy sẽ đến xem bài.” GV đi từng bàn, hướng dẫn riêng HS làm chậm: “Bạn làm từng bước thế này nhé: bước 1…, bước 2… Bạn thử làm lại xem.” Với HS làm nhanh, GV giao thêm Bài tập 3. Bài tập 3 (SGK tr. ___): “Bài tập 3 chúng ta thảo luận nhóm 4 bạn, mỗi nhóm thống nhất một cách làm rồi cử một bạn trình bày.” Hết thời gian, GV gọi HS lên bảng trình bày, hỏi cả lớp: “Bạn làm như vậy đúng hay sai? Vì sao?” GV chữa bài chi tiết từng bước trên bảng, công bố đáp án, yêu cầu HS đối chiếu và tự sửa bài của mình bằng bút khác màu, rồi chốt: “Cách làm đúng của dạng bài này là… Các em nhớ kỹ bước này nhé.” ${pageNote}`,
-    student: `Học sinh mở SGK đúng trang từng bài tập, làm Bài tập 1 bằng bảng con (viết đáp án và giơ lên cùng lúc), làm Bài tập 2 cá nhân vào vở (giơ tay khi làm xong hoặc khi gặp khó khăn), làm Bài tập 3 thảo luận nhóm 4 bạn và cử bạn trình bày, lên bảng trình bày cách làm, nhận xét bài của bạn, đối chiếu đáp án và tự sửa bài bằng bút khác màu.`,
-    steps: ['Bài tập 1 (SGK tr. ___): làm bằng bảng con — GV đọc đề từng câu, HS viết đáp án lên bảng con và giơ lên cùng lúc, GV chữa ngay câu nhiều bạn sai.', 'Bài tập 2 (SGK tr. ___): làm cá nhân vào vở — GV đi từng bàn, hướng dẫn riêng HS chậm, giao thêm cho HS nhanh.', 'Bài tập 3 (SGK tr. ___): thảo luận nhóm 4 bạn — mỗi nhóm thống nhất một cách làm, cử bạn trình bày, GV chữa từng bước và công bố đáp án.'],
-  };
+  if (name.startsWith('Luyện tập')) {
+    const quiz = quizFor(T);
+    return {
+      teacher: `GV giao từng bài tập một, không giao dồn, mỗi bài nói rõ tên bài, số trang và hình thức làm. Bài tập 1 (SGK tr. ___): “Các em mở SGK tr. ___, làm Bài tập 1. Bài này chúng ta làm bằng bảng con: nghe cô / thầy đọc đề, viết đáp án lên bảng con, giơ lên cùng lúc nhé.” GV đọc đề từng câu, HS giơ bảng con, GV quan sát nhanh cả lớp, chữa ngay câu nào nhiều bạn sai. Bài tập 2 (SGK tr. ___): “Bây giờ làm Bài tập 2, làm cá nhân vào vở. Bạn nào làm xong thì giơ tay, cô / thầy sẽ đến xem bài.” GV đi từng bàn, hướng dẫn riêng HS làm chậm: “Bạn làm từng bước thế này nhé: bước 1…, bước 2… Bạn thử làm lại xem.” Với HS làm nhanh, GV giao thêm Bài tập 3. Bài tập 3 (SGK tr. ___): “Bài tập 3 chúng ta thảo luận nhóm 4 bạn, mỗi nhóm thống nhất một cách làm rồi cử một bạn trình bày.” Hết thời gian, GV gọi HS lên bảng trình bày, hỏi cả lớp: “Bạn làm như vậy đúng hay sai? Vì sao?” GV chữa bài chi tiết từng bước trên bảng, công bố đáp án, yêu cầu HS đối chiếu và tự sửa bài của mình bằng bút khác màu, rồi chốt: “Cách làm đúng của dạng bài này là… Các em nhớ kỹ bước này nhé.” ${pageNote}`,
+      student: `Học sinh mở SGK đúng trang từng bài tập, làm Bài tập 1 bằng bảng con (viết đáp án và giơ lên cùng lúc), làm Bài tập 2 cá nhân vào vở (giơ tay khi làm xong hoặc khi gặp khó khăn), làm Bài tập 3 thảo luận nhóm 4 bạn và cử bạn trình bày, lên bảng trình bày cách làm, nhận xét bài của bạn, đối chiếu đáp án và tự sửa bài bằng bút khác màu.`,
+      steps: ['Bài tập 1 (SGK tr. ___): làm bằng bảng con — GV đọc đề từng câu, HS viết đáp án lên bảng con và giơ lên cùng lúc, GV chữa ngay câu nhiều bạn sai.', 'Bài tập 2 (SGK tr. ___): làm cá nhân vào vở — GV đi từng bàn, hướng dẫn riêng HS chậm, giao thêm cho HS nhanh.', 'Bài tập 3 (SGK tr. ___): thảo luận nhóm 4 bạn — mỗi nhóm thống nhất một cách làm, cử bạn trình bày, GV chữa từng bước và công bố đáp án.'],
+      goal: 'Hệ thống hóa và hoàn thiện nội dung kiến thức đã tìm hiểu ở hoạt động hình thành kiến thức mới.',
+      phases: [
+        P('Chuyển giao nhiệm vụ', `GV hướng dẫn HS chơi trò chơi “Vòng quay may mắn” và trả lời 5 câu hỏi trắc nghiệm về bài “${T}”. GV nêu luật chơi: quay vòng quay, đọc câu hỏi, HS giơ bảng con chọn đáp án A / B / C / D.\n${quiz.text}`),
+        P('Thực hiện nhiệm vụ', 'HS tham gia trò chơi, suy nghĩ và chọn đáp án cho từng câu hỏi.'),
+        P('Báo cáo, thảo luận', `HS giơ bảng con đáp án. GV công bố đáp án đúng sau mỗi câu và hỏi: “Bạn nào chọn khác? Vì sao bạn chọn như vậy?”\n${quiz.key}`),
+        P('Kết luận, nhận định (GV)', 'GV nhận xét bài làm của HS, chữa câu nhiều HS sai và chốt lại ý chính của bài.'),
+      ],
+      product: `${quiz.text}\n${quiz.key}\nĐáp án dự kiến — GV đối chiếu SGK/SGV trước khi dạy; có thể thay 5 câu hỏi trên bằng câu hỏi nội dung thật của bài trong SGK.`,
+    };
+  }
   if (name.startsWith('Vận dụng')) return {
     teacher: `GV nêu một tình huống cụ thể, gần gũi với đời sống của HS: “Bây giờ cô / thầy đố các em một tình huống thật nhé: Mẹ cho Lan 5 quả cam, Lan đã ăn 2 quả. Hỏi Lan còn lại mấy quả cam? Các em dùng kiến thức bài “${T}” vừa học để trả lời nhé.” (GV thay bằng tình huống cụ thể thật, gắn với nội dung bài và đời sống của HS: đi chợ, chia đồ dùng, đếm đồ vật trong lớp, giúp đỡ người thân.) GV chia nhóm, giao nhiệm vụ rõ ràng cho từng nhóm: “Nhóm 1 nêu cách làm, nhóm 2 tính kết quả, nhóm 3 nhận xét xem cách làm đó có đúng không.” GV đi hỗ trợ từng nhóm, gợi ý khi nhóm bí: “Các em thử nghĩ xem, kiến thức vừa học giúp mình làm bước nào trước?” Khi các nhóm trình bày, GV nhận xét cụ thể từng nhóm, không nhận xét chung chung, và kết luận: “Như vậy kiến thức bài hôm nay không chỉ để làm bài tập mà còn dùng được trong cuộc sống hằng ngày.”`,
     student: `Học sinh nghe tình huống cụ thể GV nêu, thảo luận nhóm để tìm cách giải quyết bằng kiến thức vừa học, tính kết quả và trình bày cách làm trước lớp, nhận xét cách làm của nhóm bạn và nêu liên hệ với cuộc sống của mình.`,
     steps: ['GV nêu một tình huống cụ thể, gần gũi (ví dụ: mẹ cho 5 quả cam, ăn 2 quả, còn mấy quả?), giao nhiệm vụ rõ ràng cho từng nhóm.', 'HS thảo luận nhóm, dùng kiến thức vừa học để giải quyết tình huống, GV đi hỗ trợ và gợi ý khi nhóm bí.', 'Các nhóm trình bày cách làm, GV nhận xét cụ thể từng nhóm và kết luận ý nghĩa thực tế của bài học.'],
+    goal: 'Giúp HS vận dụng kiến thức mới đã lĩnh hội để giải quyết những vấn đề mới trong học tập, cuộc sống.',
+    phases: [
+      P('Chuyển giao nhiệm vụ', `GV giao bài tập về nhà: sưu tầm tư liệu (sách, báo, internet) về một nội dung gắn với bài “${T}” và giới thiệu với bạn. GV đọc rõ yêu cầu của bài tập, ví dụ: “Các em hãy tìm một ví dụ thực tế thể hiện nội dung bài học hôm nay và kể lại cho cả lớp nghe vào tiết sau.”`),
+      P('Thực hiện nhiệm vụ', 'GV hướng dẫn HS đọc và xác định yêu cầu của bài tập. HS đọc và xác định yêu cầu: cần tìm gì, trình bày như thế nào.'),
+      P('Báo cáo, thảo luận', `Gợi ý trả lời: HS trình bày ví dụ thực tế đã tìm được, giải thích vì sao ví dụ đó thể hiện đúng nội dung bài “${T}”; các bạn nhận xét, bổ sung.`),
+      P('Kết luận, nhận định (GV)', 'GV dặn dò HS những nội dung cần học ở nhà và chuẩn bị cho bài học sau: đọc trước bài sau, quan sát một số hình ảnh trong bài, sưu tầm tư liệu liên quan.'),
+    ],
+    product: `Gợi ý trả lời: HS nêu được ví dụ thực tế đúng với nội dung bài “${T}”, giải thích được vì sao ví dụ đó đúng và rút ra được ý nghĩa.\n(GV điền gợi ý trả lời cụ thể theo nội dung bài và SGK trước khi dạy.)`,
   };
   return {
     teacher: `GV tổ chức trò chơi kết thúc tiết học cho cả lớp cùng tham gia, ví dụ trò chơi “Ai nhanh hơn” hoặc “Tiếp sức”: GV nêu luật chơi rõ ràng: “Cô / thầy đọc một phép tính (hoặc một câu hỏi) của bài hôm nay, cả lớp cùng giơ bảng con trả lời, bạn trả lời đúng và nhanh được cộng điểm cho tổ.” GV đọc từng câu hỏi gắn với 2–3 ý chính của bài “${T}”, HS cả lớp cùng trả lời bằng bảng con, GV công bố đáp án sau mỗi câu và khen tổ trả lời nhanh và đúng. Chơi xong, GV nhận xét tiết học cụ thể: “Hôm nay lớp mình làm bài rất tốt ở phần…, phần… còn cần cố gắng thêm.” GV giao bài tập về nhà rõ ràng: “Về nhà các em làm bài tập còn lại trong SGK, đọc trước bài sau và chuẩn bị…” GV dặn dò: “Các em nhớ mang đủ sách vở cho tiết sau nhé.”`,
     student: `Học sinh cả lớp cùng tham gia trò chơi kết thúc tiết học, nghe câu hỏi của GV, viết đáp án lên bảng con và giơ lên cùng lúc, qua trò chơi nhắc lại được 2–3 ý chính của bài, lắng nghe nhận xét của GV, ghi bài tập về nhà và chuẩn bị bài sau, nêu điều còn thắc mắc (nếu có) để GV giải đáp trước khi hết tiết.`,
     steps: ['GV tổ chức trò chơi cả lớp cùng tham gia (“Ai nhanh hơn” / “Tiếp sức”), đọc từng câu hỏi gắn với ý chính của bài.', 'HS cả lớp cùng trả lời bằng bảng con, GV công bố đáp án sau mỗi câu và khen tổ trả lời nhanh, đúng.', 'GV nhận xét tiết học cụ thể, giao bài tập về nhà rõ ràng, HS ghi bài và chuẩn bị bài sau.'],
+    goal: 'HS nhắc lại được 2–3 ý chính của bài qua trò chơi cả lớp; GV nhận xét tiết học và giao bài tập về nhà.',
+    phases: [
+      P('Chuyển giao nhiệm vụ', 'GV tổ chức trò chơi “Ai nhanh hơn” (hoặc “Tiếp sức”) cho cả lớp cùng tham gia: GV đọc một câu hỏi gắn với ý chính của bài, cả lớp cùng giơ bảng con trả lời.'),
+      P('Thực hiện nhiệm vụ', 'HS cả lớp cùng tham gia trò chơi, viết đáp án lên bảng con và giơ lên cùng lúc.'),
+      P('Báo cáo, thảo luận', 'GV công bố đáp án sau mỗi câu, khen tổ trả lời nhanh và đúng; HS nhắc lại ý chính của bài qua từng câu hỏi.'),
+      P('Kết luận, nhận định (GV)', 'GV nhận xét tiết học cụ thể, giao bài tập về nhà rõ ràng: hoàn thành bài tập còn lại trong SGK, đọc trước bài sau; dặn dò HS chuẩn bị sách vở cho tiết sau.'),
+    ],
+    product: `Kết quả trò chơi: các tổ trả lời đúng 2–3 ý chính của bài “${T}”.\nBài tập về nhà: hoàn thành bài tập còn lại trong SGK; đọc trước bài sau và chuẩn bị sách vở cho tiết sau.`,
   };
 }
 function generatePlan(input, profile) {
@@ -214,27 +279,34 @@ function generatePlan(input, profile) {
       teacher: d.teacher,
       student: d.student,
       expected: expectedFor(name, title, subject),
+      goal: d.goal || '',
+      phases: d.phases || [],
+      product: d.product || '',
       // steps có phút riêng chỉ để minh họa chi tiết; tổng điểm CHỈ tính duration chính, không cộng steps.
       steps: d.steps.map((text, i) => ({ text, minutes: Math.max(1, Math.round(duration / d.steps.length)) })),
     };
   });
   const support = profile.supportCount ? ` Lớp có ${profile.classSize || ''} học sinh, trong đó ${profile.supportCount} em cần hỗ trợ thêm.` : '';
+  // Đầu trang theo mẫu: Ngày soạn (mặc định hôm nay, giờ Việt Nam), Ngày giảng, Tiết.
+  const vnNow = new Date(Date.now() + 7 * 3600 * 1000);
+  const dd = String(vnNow.getUTCDate()).padStart(2, '0'), mm = String(vnNow.getUTCMonth() + 1).padStart(2, '0'), yyyy = vnNow.getUTCFullYear();
+  const ngaySoan = input.ngaySoan || `${dd}/${mm}/${yyyy}`;
+  const ngayGiang = input.ngayGiang || '';
+  const tiet = input.tiet || '';
   const sections = {
-    muc_tieu: `${refNote}\n- Học sinh nhận biết và trình bày được nội dung trọng tâm của bài “${title}”.\n- Học sinh thực hiện được các nhiệm vụ học tập của bài và vận dụng được kiến thức vào tình huống quen thuộc.\n- Học sinh hợp tác, chia sẻ và tôn trọng ý kiến của bạn trong quá trình học.`,
-    pham_chat_nang_luc: `Năng lực: tự chủ và tự học, giao tiếp và hợp tác, giải quyết vấn đề và sáng tạo; năng lực đặc thù môn ${subject || 'học'}. Phẩm chất: chăm chỉ, trung thực, trách nhiệm, nhân ái.`,
-    thiet_bi: `Giáo viên: sách giáo khoa bộ ${textbook}, sách giáo viên, tranh ảnh/minh họa bài “${title}”, bảng/phấn hoặc máy chiếu. Học sinh: sách giáo khoa, vở, đồ dùng học tập theo yêu cầu của bài.`,
-    khoi_dong: `Tổ chức trò chơi/khởi động ngắn gắn với bài “${title}”, khơi gợi hứng thú và dẫn dắt vào bài mới. Phân hóa: học sinh cần hỗ trợ được gợi ý trước bằng câu hỏi dễ; học sinh khá được giao thêm câu hỏi mở.`,
-    hinh_thanh: `Giáo viên giới thiệu tình huống, đặt câu hỏi dẫn dắt; học sinh quan sát, thảo luận và rút ra kiến thức mới của bài “${title}”. Giáo viên chốt kiến thức trọng tâm, học sinh nhắc lại và ghi nhớ.`,
-    luyen_tap: `Học sinh luyện tập, thực hành theo nhiệm vụ của bài. Phân hóa: học sinh cần hỗ trợ làm bài cơ bản có gợi ý từng bước; học sinh khá/giỏi làm thêm bài vận dụng nâng cao.${support}`,
-    van_dung: `Học sinh vận dụng kiến thức bài “${title}” vào tình huống thực tế gần gũi, chia sẻ sản phẩm và liên hệ với cuộc sống hằng ngày.`,
+    // I. MỤC TIÊU theo mẫu: 1. Về kiến thức — 2. Về năng lực (chung + đặc thù môn) — 3. Về phẩm chất.
+    muc_tieu: `${refNote}\n1. Về kiến thức\n- Học sinh nêu được những nét chính về bài “${title}”.\n- Học sinh trình bày được nội dung trọng tâm của bài bằng lời của mình.\n2. Về năng lực\n- Năng lực chung:\n+ Hình thành và phát triển năng lực tìm hiểu, nhận thức qua việc sưu tầm tài liệu, tranh, ảnh để tìm hiểu về bài “${title}”.\n+ Hình thành năng lực liên hệ, vận dụng kiến thức của bài học vào thực tiễn cuộc sống, từ đó lí giải được các sự kiện, hiện tượng đang diễn ra (ở mức độ đơn giản).\n+ Hiểu rõ nhiệm vụ của nhóm; đánh giá được khả năng của bản thân và tự nhận công việc phù hợp.\n- Năng lực đặc thù môn ${subject || 'học'}:\n+ Khai thác và sử dụng thông tin của tư liệu, hình ảnh trong SGK để nhận thức về nội dung bài “${title}”.\n+ Vận dụng kiến thức của bài để giải quyết tình huống thực tế và trình bày ý kiến của mình.\n3. Về phẩm chất\n- Học sinh chăm chỉ, trung thực, trách nhiệm trong học tập; hợp tác, chia sẻ và tôn trọng ý kiến của bạn.`,
+    // II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU theo mẫu: 1. Giáo viên — 2. Học sinh.
+    thiet_bi: `1. Giáo viên\n- Máy tính, các hình ảnh liên quan đến bài dạy, máy chiếu, phiếu học tập (giấy A0), nam châm dán phiếu học tập, bút màu, SGK, SGV ${subject || 'môn học'} bộ ${textbook}.\n- Giáo án biên soạn theo định hướng phát triển năng lực và phẩm chất cho HS.\n- Tranh, ảnh, tư liệu về bài “${title}”.\n- Phiếu học tập.\n2. Học sinh\n- SGK, tranh, ảnh, tư liệu sưu tầm liên quan đến nội dung bài học và dụng cụ học tập theo yêu cầu của GV.`,
     tien_trinh: `Tiến trình gồm 5 hoạt động chính với tổng thời lượng ${lessonMinutes} phút (chỉ tính thời lượng chính từng hoạt động, không cộng dồn phút bước con): ${acts.map((a) => `${a.name} (${a.duration} phút)`).join('; ')}. ${frameworkNote}`,
-    danh_gia: `Tiêu chí đánh giá: (1) Đạt — học sinh trình bày đúng nội dung trọng tâm và hoàn thành nhiệm vụ; (2) Chưa đạt — học sinh cần hỗ trợ thêm và làm lại nhiệm vụ cơ bản. Cách đánh giá: quan sát, hỏi đáp, sản phẩm học tập và nhận xét của bạn.`,
+    danh_gia: `Tiêu chí đánh giá: (1) Đạt — học sinh trình bày đúng nội dung trọng tâm và hoàn thành nhiệm vụ; (2) Chưa đạt — học sinh cần hỗ trợ thêm và làm lại nhiệm vụ cơ bản. Cách đánh giá: quan sát, hỏi đáp, sản phẩm học tập và nhận xét của bạn.${support}`,
     rut_kinh_nghiem: `Sau tiết dạy, giáo viên ghi lại: nội dung nào học sinh tiếp thu tốt, nội dung nào cần điều chỉnh, và cách điều chỉnh cho lần dạy sau.`,
   };
   if (profile.conventions?.signatureBlock) sections.rut_kinh_nghiem += `\n\nKhối ký tên theo mẫu của trường:\n${profile.conventions.signatureBlock}`;
   const plan = {
     id: uid(), ownerGuestId: null, title, week: input.week || '', periods: Number(input.periods) || 1,
     level, subject, grade, textbook, lessonMinutes, sections, activities: acts,
+    ngaySoan, ngayGiang, tiet,
     authorName: profile.name || '', authorSchool: profile.school || '',
     isCommunity: false, reuseCount: 0, orgId: '', reviewState: 'none', reviewHistory: [],
     createdAt: nowIso(), updatedAt: nowIso(),
@@ -247,12 +319,7 @@ function extractConventions(sample) {
   const text = String(sample || '');
   const synonyms = {
     muc_tieu: ['mục tiêu', 'yêu cầu cần đạt'],
-    pham_chat_nang_luc: ['phẩm chất', 'năng lực'],
     thiet_bi: ['thiết bị', 'học liệu', 'đồ dùng'],
-    khoi_dong: ['khởi động'],
-    hinh_thanh: ['hình thành kiến thức'],
-    luyen_tap: ['luyện tập', 'thực hành'],
-    van_dung: ['vận dụng'],
     tien_trinh: ['tiến trình'],
     danh_gia: ['đánh giá', 'tiêu chí'],
     rut_kinh_nghiem: ['rút kinh nghiệm', 'điều chỉnh'],
@@ -272,23 +339,58 @@ function extractConventions(sample) {
   const sigLines = lines.filter((l) => /ký|duyệt|giáo viên|tổ trưởng|hiệu trưởng/i.test(l));
   return { sectionOrder: order.map((o) => o.key), fixedTerms, signatureBlock: sigLines.slice(-4).join('\n') };
 }
+function docDateLine(plan) {
+  const m = String(plan.ngaySoan || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return '';
+  return `Ngày ${m[1]} tháng ${m[2]} năm ${m[3]}`;
+}
+function docFooter(plan) {
+  const d = docDateLine(plan);
+  return `${d ? `<p style="text-align:right"><i>${escapeHtml(d)}</i></p>` : ''}<p style="text-align:right"><b>Kí duyệt của tổ chuyên môn</b><br>Tổ trưởng<br><br><br>………………………</p>`;
+}
+// Xuất .doc theo đúng format mẫu sếp gửi 08/11/2026:
+// Đầu trang (Ngày soạn / Ngày giảng / TIẾT: Bài) — I. MỤC TIÊU — II. THIẾT BỊ —
+// III. TIẾN TRÌNH (mỗi hoạt động: a. Mục tiêu, b. Tổ chức thực hiện 4 bước;
+// Hình thành kiến thức dùng bảng 2 cột “Hoạt động của thầy và trò | Sản phẩm dự kiến”)
+// — IV. ĐÁNH GIÁ — V. RÚT KINH NGHIỆM — chữ ký tổ chuyên môn.
+function activityDocHtml(a, i) {
+  const head = `<h3>HOẠT ĐỘNG ${i + 1}: ${escapeHtml(a.name)} (${a.duration} phút)</h3><p><b>a. Mục tiêu:</b> ${escapeHtml(a.goal || '')}</p><p><b>b. Tổ chức thực hiện:</b></p>`;
+  const phasesHtml = (a.phases || []).map((ph) => `<p><b>- ${escapeHtml(ph.label)}:</b> ${escapeHtml(ph.text || '').replace(/\n/g, '<br>')}</p>`).join('');
+  const expectedHtml = a.expected ? `<p><i>Câu trả lời / đáp án dự kiến: ${escapeHtml(a.expected)}</i></p>` : '';
+  if ((a.name || '').startsWith('Hình thành')) {
+    const left = (a.phases || []).map((ph) => `<b>- ${escapeHtml(ph.label)}:</b> ${escapeHtml(ph.text || '').replace(/\n/g, '<br>')}`).join('<br>');
+    return `${head}<table><tr><th>Hoạt động của thầy và trò</th><th>Sản phẩm dự kiến</th></tr><tr><td>${left}</td><td>${escapeHtml(a.product || '').replace(/\n/g, '<br>')}</td></tr></table>${expectedHtml}`;
+  }
+  const productHtml = a.product ? `<p><b>Sản phẩm dự kiến:</b> ${escapeHtml(a.product).replace(/\n/g, '<br>')}</p>` : '';
+  return `${head}${phasesHtml}${productHtml}${expectedHtml}`;
+}
 function renderDoc(plan) {
-  // Bảng vẫn 3 cột chuẩn 5512; thời gian nằm cùng tên hoạt động, đáp án dự kiến nằm trong ô HS.
-  const rows = (plan.activities || []).map((a) => `<tr><td>${escapeHtml(a.name)} (${a.duration} phút)</td><td>${escapeHtml(a.teacher || '')}</td><td>${escapeHtml(a.student || '')}${a.expected ? `<br><i>Câu trả lời / đáp án dự kiến: ${escapeHtml(a.expected)}</i>` : ''}</td></tr>`).join('');
-  const detail = (plan.activities || []).map((a) => `<h4>${escapeHtml(a.name)} (${a.duration} phút)</h4><p>Các bước: ${(a.steps || []).map((s) => escapeHtml(s.text || s)).join(' ')}</p>${a.expected ? `<p><i>Câu trả lời / đáp án dự kiến: ${escapeHtml(a.expected)}</i></p>` : ''}`).join('');
-  const secs = SECTIONS.map((s) => `<h3>${escapeHtml(s.label)}</h3><p>${escapeHtml(plan.sections?.[s.key] || '').replace(/\n/g, '<br>')}</p>`).join('');
+  const br = (s) => escapeHtml(s || '').replace(/\n/g, '<br>');
   const badge = plan.reviewState === 'approved' ? '<p><b>Tổ đã duyệt ✓</b></p>' : '';
-  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman",serif;font-size:13pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:6px;vertical-align:top}</style></head><body><h2 style="text-align:center">GIÁO ÁN</h2><p>Trường: ${escapeHtml(plan.authorSchool || '')} — Giáo viên: ${escapeHtml(plan.authorName || '')}</p><p>Môn: ${escapeHtml(plan.subject || '')} — Lớp: ${escapeHtml(plan.grade || '')} — Bài: ${escapeHtml(plan.title || '')} — Bộ sách: ${escapeHtml(plan.textbook || '')} — Thời lượng: ${plan.lessonMinutes} phút — Điểm tự chấm: ${plan.score}/100</p>${badge}<h3>Tiến trình dạy học (bảng 3 cột)</h3><table><tr><th>Hoạt động</th><th>Hoạt động của giáo viên</th><th>Hoạt động của học sinh</th></tr>${rows}</table><h3>Chi tiết từng hoạt động (bước, bài tập, đáp án dự kiến)</h3>${detail}${secs}</body></html>`;
+  const acts = (plan.activities || []).map((a, i) => activityDocHtml(a, i)).join('');
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman",serif;font-size:13pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:6px;vertical-align:top}</style></head><body><p>Ngày soạn: ${escapeHtml(plan.ngaySoan || '')}</p><p>Ngày giảng: ${escapeHtml(plan.ngayGiang || '…………')}</p><h2 style="text-align:center">TIẾT ${escapeHtml(plan.tiet || '…')}: ${escapeHtml(plan.title || '')}</h2><p>Trường: ${escapeHtml(plan.authorSchool || '')} — Giáo viên: ${escapeHtml(plan.authorName || '')}</p><p>Môn: ${escapeHtml(plan.subject || '')} — Lớp: ${escapeHtml(plan.grade || '')} — Bộ sách: ${escapeHtml(plan.textbook || '')} — Thời lượng: ${plan.lessonMinutes} phút — Điểm tự chấm: ${plan.score}/100</p>${badge}<h3>I. MỤC TIÊU</h3><p>${br(plan.sections?.muc_tieu)}</p><h3>II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU</h3><p>${br(plan.sections?.thiet_bi)}</p><h3>III. TIẾN TRÌNH DẠY HỌC</h3><p>${br(plan.sections?.tien_trinh)}</p>${acts}<h3>IV. ĐÁNH GIÁ</h3><p>${br(plan.sections?.danh_gia)}</p><h3>V. RÚT KINH NGHIỆM SAU TIẾT DẠY</h3><p>${br(plan.sections?.rut_kinh_nghiem)}</p>${docFooter(plan)}</body></html>`;
 }
 function renderTxt(plan) {
-  const lines = [`GIÁO ÁN — ${plan.title}`, `Trường: ${plan.authorSchool} — Giáo viên: ${plan.authorName}`, `Môn: ${plan.subject} — Lớp: ${plan.grade} — Bộ sách: ${plan.textbook} — ${plan.lessonMinutes} phút — Điểm tự chấm: ${plan.score}/100`, ''];
+  const lines = [`Ngày soạn: ${plan.ngaySoan || ''}`, `Ngày giảng: ${plan.ngayGiang || '…………'}`, `TIẾT ${plan.tiet || '…'}: ${plan.title}`, `Trường: ${plan.authorSchool} — Giáo viên: ${plan.authorName}`, `Môn: ${plan.subject} — Lớp: ${plan.grade} — Bộ sách: ${plan.textbook} — ${plan.lessonMinutes} phút — Điểm tự chấm: ${plan.score}/100`, ''];
   if (plan.reviewState === 'approved') lines.push('Tổ đã duyệt ✓', '');
-  lines.push('TIẾN TRÌNH (bảng 3 cột: Hoạt động | Giáo viên | Học sinh)');
-  (plan.activities || []).forEach((a) => lines.push(`- ${a.name} (${a.duration} phút) | ${a.teacher} | ${a.student}${a.expected ? ` | Câu trả lời / đáp án dự kiến: ${a.expected}` : ''}`));
-  lines.push('CHI TIẾT TỪNG HOẠT ĐỘNG');
-  (plan.activities || []).forEach((a) => { lines.push(`* ${a.name} (${a.duration} phút)`); (a.steps || []).forEach((s) => lines.push(`  - ${s.text || s}`)); if (a.expected) lines.push(`  Câu trả lời / đáp án dự kiến: ${a.expected}`); });
-  lines.push('');
-  SECTIONS.forEach((s) => { lines.push(s.label); lines.push(plan.sections?.[s.key] || ''); lines.push(''); });
+  lines.push('I. MỤC TIÊU', plan.sections?.muc_tieu || '', '', 'II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU', plan.sections?.thiet_bi || '', '', 'III. TIẾN TRÌNH DẠY HỌC', plan.sections?.tien_trinh || '', '');
+  (plan.activities || []).forEach((a, i) => {
+    lines.push(`HOẠT ĐỘNG ${i + 1}: ${a.name} (${a.duration} phút)`, `a. Mục tiêu: ${a.goal || ''}`, 'b. Tổ chức thực hiện:');
+    if ((a.name || '').startsWith('Hình thành')) {
+      lines.push('Bảng: Hoạt động của thầy và trò | Sản phẩm dự kiến');
+      (a.phases || []).forEach((ph) => lines.push(`- ${ph.label}: ${ph.text || ''}`));
+      lines.push(`Sản phẩm dự kiến: ${a.product || ''}`);
+    } else {
+      (a.phases || []).forEach((ph) => lines.push(`- ${ph.label}: ${ph.text || ''}`));
+      if (a.product) lines.push(`Sản phẩm dự kiến: ${a.product}`);
+    }
+    if (a.expected) lines.push(`Câu trả lời / đáp án dự kiến: ${a.expected}`);
+    lines.push('');
+  });
+  lines.push('IV. ĐÁNH GIÁ', plan.sections?.danh_gia || '', '', 'V. RÚT KINH NGHIỆM SAU TIẾT DẠY', plan.sections?.rut_kinh_nghiem || '', '');
+  const d = docDateLine(plan);
+  if (d) lines.push(d, '');
+  lines.push('Kí duyệt của tổ chuyên môn', 'Tổ trưởng', '', '………………………');
   return lines.join('\n');
 }
 function csvCell(v) { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
